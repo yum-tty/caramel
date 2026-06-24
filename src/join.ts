@@ -77,7 +77,7 @@ export function JoinHorizontal(pos: Position, ...strs: string[]): string {
     for (let j = 0; j < blocks.length; j++) {
       const blockLine = blocks[j]![i] || ""
       const padding = " ".repeat(maxWidths[j]! - visibleWidth(blockLine))
-      line += blockLine + padding
+      line += blockLine + "\x1b[0m" + padding
     }
     result.push(line)
   }
@@ -110,7 +110,7 @@ export function JoinVertical(pos: Position, ...strs: string[]): string {
       const w = maxWidth - visibleWidth(line)
 
       if (pos === 0) {
-        result.push(line + " ".repeat(w))
+        result.push(line + "\x1b[0m" + " ".repeat(w))
       } else if (pos === 1) {
         result.push(" ".repeat(w) + line)
       } else {
@@ -120,7 +120,7 @@ export function JoinVertical(pos: Position, ...strs: string[]): string {
           const split = Math.round(w * p)
           const right = w - split
           const left = w - right
-          result.push(" ".repeat(left) + line + " ".repeat(right))
+          result.push(" ".repeat(left) + line + "\x1b[0m" + " ".repeat(right))
         }
       }
     }
