@@ -448,7 +448,11 @@ export class Style {
 
     if (this._transformFn) str = this._transformFn(str)
 
-    const hasStyles = this._attrs !== 0 || this._fgColor !== null || this._bgColor !== null || this._ulColor !== null || this._ul !== "none"
+    const hasStyles = this._attrs !== 0 || this._fgColor !== null || this._bgColor !== null || this._ulColor !== null || this._ul !== "none" ||
+      this._width !== 0 || this._height !== 0 || this._maxWidth !== 0 || this._maxHeight !== 0 ||
+      this._paddingTop !== 0 || this._paddingRight !== 0 || this._paddingBottom !== 0 || this._paddingLeft !== 0 ||
+      this._marginTop !== 0 || this._marginRight !== 0 || this._marginBottom !== 0 || this._marginLeft !== 0 ||
+      this._borderStyle !== null || this._alignH !== "left" || this._alignV !== "left" || this._inline
     if (!hasStyles) return this.maybeConvertTabs(str)
 
     const bold_ = (this._attrs & Style.BOLD) !== 0
