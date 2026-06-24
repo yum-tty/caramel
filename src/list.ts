@@ -150,6 +150,24 @@ export class List {
     return this
   }
 
+  /**
+   * Get all item values (Go-compatible getter).
+   */
+  getItems(): string[] {
+    const result: string[] = []
+    const traverse = (children: Children) => {
+      for (let i = 0; i < children.length(); i++) {
+        const child = children.at(i)
+        if (child) {
+          result.push(child.value())
+          traverse(child.children())
+        }
+      }
+    }
+    traverse(this.tree.childNodes)
+    return result
+  }
+
   enumerator(enumeratorFn: Enumerator): List {
     this.tree.enumerator((children: Children, i: number) => enumeratorFn(children, i))
     return this
