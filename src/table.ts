@@ -28,9 +28,27 @@ export class Table {
   }
 
   /**
+   * Set headers (Go-compatible: variadic string args).
+   */
+  Headers(...headers: string[]): Table {
+    this.headers = headers
+    this.calculateWidths()
+    return this
+  }
+
+  /**
    * Set the table rows.
    */
   setRows(rows: string[][]): Table {
+    this.rows = rows
+    this.calculateWidths()
+    return this
+  }
+
+  /**
+   * Set rows (Go-compatible: variadic string array args).
+   */
+  Rows(...rows: string[][]): Table {
     this.rows = rows
     this.calculateWidths()
     return this
@@ -41,6 +59,24 @@ export class Table {
    */
   addRow(row: string[]): Table {
     this.rows.push(row)
+    this.calculateWidths()
+    return this
+  }
+
+  /**
+   * Add a row (Go-compatible: variadic string args).
+   */
+  Row(...row: string[]): Table {
+    this.rows.push(row)
+    this.calculateWidths()
+    return this
+  }
+
+  /**
+   * Clear all rows.
+   */
+  ClearRows(): Table {
+    this.rows = []
     this.calculateWidths()
     return this
   }
@@ -159,6 +195,83 @@ export class Table {
       }
       this.widths.push(maxWidth)
     }
+  }
+
+  /**
+   * Render the table (Go-compatible alias).
+   */
+  Render(): string {
+    return this.render()
+  }
+
+  /**
+   * Get headers (Go-compatible).
+   */
+  GetHeaders(): string[] {
+    return this.headers
+  }
+
+  /**
+   * Get data as matrix (Go-compatible).
+   */
+  GetData(): string[][] {
+    return this.rows
+  }
+
+  /**
+   * Set width (Go-compatible alias).
+   */
+  Width(w: number): Table {
+    this.width = w
+    return this
+  }
+
+  /**
+   * Set height (Go-compatible alias).
+   */
+  Height(h: number): Table {
+    this.height = h
+    return this
+  }
+
+  /**
+   * Set word wrap (Go-compatible).
+   */
+  Wrap(v: boolean): Table {
+    // TODO: implement word wrap
+    return this
+  }
+
+  /**
+   * Set Y offset for scrolling (Go-compatible).
+   */
+  YOffset(y: number): Table {
+    // TODO: implement scroll offset
+    return this
+  }
+
+  /**
+   * Toggle header separator border (Go-compatible).
+   */
+  BorderHeader(v: boolean): Table {
+    // TODO: implement header border toggle
+    return this
+  }
+
+  /**
+   * Toggle column separator border (Go-compatible).
+   */
+  BorderColumn(v: boolean): Table {
+    // TODO: implement column border toggle
+    return this
+  }
+
+  /**
+   * Toggle row separator border (Go-compatible).
+   */
+  BorderRow(v: boolean): Table {
+    // TODO: implement row border toggle
+    return this
   }
 }
 
