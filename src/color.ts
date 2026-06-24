@@ -148,19 +148,10 @@ export const reverse = "\x1b[7m"
 export const strikethrough = "\x1b[9m"
 
 export function fg(color: Color): string {
-  // Bun.color handles hex strings and CSS colors natively
-  if (typeof color === "string" && color.startsWith("#")) {
-    return Bun.color(color, "ansi") ?? colorToAnsi(color, "38")
-  }
-  // Fallback for ANSI/ANSI256/RGB object types
   return `\x1b[${colorToAnsi(color, "38")}m`
 }
 
 export function bg(color: Color): string {
-  if (typeof color === "string" && color.startsWith("#")) {
-    // Bun.color outputs foreground (38), swap to background (48)
-    return (Bun.color(color, "ansi") ?? "").replace("38", "48") || colorToAnsi(color, "48")
-  }
   return `\x1b[${colorToAnsi(color, "48")}m`
 }
 
