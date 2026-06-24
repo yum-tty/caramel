@@ -22,12 +22,76 @@ function lerp(a: number, b: number, t: number): number {
   return a + (b - a) * t
 }
 
-function lerpColor(a: RGBColor, b: RGBColor, t: number): RGBColor {
+interface LabColor { L: number; a: number; b: number }
+
+function srgbToLinear(c: number): number {
+  const s = c / 255
+  return s <= 0.04045 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4)
+}
+
+function linearToSrgb(c: number): number {
+  const v = c <= 0.0031308 ? 12.92 * c : 1.055 * Math.pow(c, 1 / 2.4) - 0.055
+  return Math.round(Math.max(0, Math.min(255, v * 255)))
+}
+
+function rgbToXyz(rgb: RGBColor): [number, number, number] {
+  const r = srgbToLinear(rgb.r)
+  const g = srgbToLinear(rgb.g)
+  const b = srgbToLinear(rgb.b)
+  return [
+    0.4124564 * r + 0.3575761 * g + 0.1804375 * b,
+    0.2126729 * r + 0.7151522 * g + 0.0721750 * b,
+    0.0193339 * r + 0.1191920 * g + 0.9503041 * b,
+  ]
+}
+
+function xyzToRgb(x: number, y: number, z: number): RGBColor {
   return {
-    r: lerp(a.r, b.r, t),
-    g: lerp(a.g, b.g, t),
-    b: lerp(a.b, b.b, t),
+    r: linearToSrgb(3.2404542 * x - 1.5371385 * y - 0.4985314 * z),
+    g: linearToSrgb(-0.9692660 * x + 1.8760108 * y + 0.0415560 * z),
+    b: linearToSrgb(0.0556434 * x - 0.2040259 * y + 1.0572252 * z),
   }
+}
+
+const D65 = [0.95047, 1.0, 1.08883]
+
+function xyzToLab(x: number, y: number, z: number): LabColor {
+  const f = (t: number) => t > 0.008856 ? Math.cbrt(t) : 7.787 * t + 16 / 116
+  const fx = f(x / D65[0])
+  const fy = f(y / D65[1])
+  const fz = f(z / D65[2])
+  return { L: 116 * fy - 16, a: 500 * (fx - fy), b: 200 * (fy - fz) }
+}
+
+function labToXyz(L: number, a: number, b: number): [number, number, number] {
+  const fy = (L + 16) / 116
+  const fx = a / 500 + fy
+  const fz = fy - b / 200
+  const finv = (t: number) => {
+    const t3 = t * t * t
+    return t3 > 0.008856 ? t3 : (t - 16 / 116) / 7.787
+  }
+  return [D65[0] * finv(fx), D65[1] * finv(fy), D65[2] * finv(fz)]
+}
+
+function rgbToLab(rgb: RGBColor): LabColor {
+  const [x, y, z] = rgbToXyz(rgb)
+  return xyzToLab(x, y, z)
+}
+
+function labToRgb(lab: LabColor): RGBColor {
+  const [x, y, z] = labToXyz(lab.L, lab.a, lab.b)
+  return xyzToRgb(x, y, z)
+}
+
+function blendLab(a: RGBColor, b: RGBColor, t: number): RGBColor {
+  const labA = rgbToLab(a)
+  const labB = rgbToLab(b)
+  return labToRgb({
+    L: lerp(labA.L, labB.L, t),
+    a: lerp(labA.a, labB.a, t),
+    b: lerp(labA.b, labB.b, t),
+  })
 }
 
 export function Blend1D(steps: number, ...colors: string[]): string[] {
@@ -36,18 +100,28 @@ export function Blend1D(steps: number, ...colors: string[]): string[] {
   if (steps <= 0) return []
 
   const rgbColors = colors.map(hexToRgb)
+
+  if (steps <= rgbColors.length) {
+    return rgbColors.slice(0, steps).map(rgbToHex)
+  }
+
   const result: string[] = []
+  const numSegments = rgbColors.length - 1
+  const defaultSize = Math.floor(steps / numSegments)
+  let remainingSteps = steps % numSegments
 
-  for (let i = 0; i < steps; i++) {
-    const t = i / (steps - 1)
-    const segment = t * (rgbColors.length - 1)
-    const idx = Math.floor(segment)
-    const localT = segment - idx
+  let resultIndex = 0
+  for (let i = 0; i < numSegments; i++) {
+    const from = rgbColors[i]!
+    const to = rgbColors[i + 1]!
+    let segmentSize = defaultSize
+    if (i < remainingSteps) segmentSize++
 
-    if (idx >= rgbColors.length - 1) {
-      result.push(rgbToHex(rgbColors[rgbColors.length - 1]!))
-    } else {
-      result.push(rgbToHex(lerpColor(rgbColors[idx]!, rgbColors[idx + 1]!, localT)))
+    const divisor = segmentSize - 1
+    for (let j = 0; j < segmentSize; j++) {
+      const t = divisor > 0 ? j / divisor : 0
+      result.push(rgbToHex(blendLab(from, to, t)))
+      resultIndex++
     }
   }
 
@@ -60,24 +134,29 @@ export function Blend2D(
   angle: number,
   ...colors: string[]
 ): string[][] {
+  const rgbColors = colors.map(hexToRgb)
+  const maxDim = Math.max(width, height)
+  const diagonalGradient = Blend1D(maxDim, ...colors)
+
   const result: string[][] = []
   const rad = (angle * Math.PI) / 180
-  const cos = Math.cos(rad)
-  const sin = Math.sin(rad)
+  const cosAngle = Math.cos(rad)
+  const sinAngle = Math.sin(rad)
+
+  const centerX = (width - 1) / 2
+  const centerY = (height - 1) / 2
+  const diagonalLength = Math.sqrt(width * width + height * height)
+  const gradientLen = diagonalGradient.length - 1
 
   for (let y = 0; y < height; y++) {
     const row: string[] = []
     for (let x = 0; x < width; x++) {
-      const nx = x / (width - 1 || 1)
-      const ny = y / (height - 1 || 1)
-      const t = (nx * cos + ny * sin + 1) / 2
-
-      const rgbColors = colors.map(hexToRgb)
-      const segment = Math.max(0, Math.min(1, t)) * (rgbColors.length - 1)
-      const idx = Math.min(Math.floor(segment), rgbColors.length - 2)
-      const localT = segment - idx
-
-      row.push(rgbToHex(lerpColor(rgbColors[idx]!, rgbColors[idx + 1]!, localT)))
+      const dx = x - centerX
+      const dy = y - centerY
+      const rotX = dx * cosAngle - dy * sinAngle
+      const gradientPos = Math.max(0, Math.min(1, (rotX + diagonalLength / 2) / diagonalLength))
+      const gradientIndex = Math.min(Math.floor(gradientPos * gradientLen), gradientLen)
+      row.push(diagonalGradient[gradientIndex]!)
     }
     result.push(row)
   }
