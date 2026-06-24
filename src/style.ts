@@ -481,7 +481,15 @@ export class Style {
 
     if (bold_) te += bold
     if (italic_) te += italic
-    if (underline_) te += underline
+    if (underline_) {
+      switch (this._ul) {
+        case "curly": te += "\x1b[4:3m"; break
+        case "dotted": te += "\x1b[4:4m"; break
+        case "dashed": te += "\x1b[4:5m"; break
+        case "double": te += "\x1b[4:2m"; break
+        default: te += underline
+      }
+    }
     if (reverse_) { te += reverse; teWhitespace += reverse }
     if (blink_) te += blink
     if (faint_) te += dim
@@ -793,9 +801,9 @@ export class Style {
 
   private maybeConvertTabs(str: string): string {
     switch (this._tabWidth) {
-      case -1: return str
-      case 0: return str.replace(/\t/g, "")
-      default: return str.replace(/\t/g, " ".repeat(this._tabWidth))
+      case -1: return str.replace(/\r\n/g, "\n")
+      case 0: return str.replace(/\t/g, "").replace(/\r\n/g, "\n")
+      default: return str.replace(/\t/g, " ".repeat(this._tabWidth)).replace(/\r\n/g, "\n")
     }
   }
 
