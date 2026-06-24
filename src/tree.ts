@@ -146,15 +146,19 @@ interface TreeRenderer {
   enumerator: TreeEnumerator
   indenter: TreeIndenter
   width: number
+  render(node: Node, root: boolean, prefix: string): string
 }
 
 function newRenderer(): TreeRenderer {
-  return {
+  const r: TreeRenderer = {
     style: newTreeStyle(),
     enumerator: DefaultEnumerator,
     indenter: DefaultIndenter,
     width: 0,
+    render: (node: Node, root: boolean, prefix: string) => "",
   }
+  r.render = (node: Node, root: boolean, prefix: string) => renderNode(r, node, root, prefix)
+  return r
 }
 
 function ensureParent(nodes: Children, item: Tree): { node: Tree; removeIndex: number } {
@@ -213,6 +217,20 @@ export class Tree implements Node {
 
   setValue(value: any): void {
     this.root(value)
+  }
+
+  root(rootValue: any): Tree {
+    if (rootValue instanceof Tree) {
+      this._value = rootValue.value()
+      this.child(rootValue.children())
+    } else if (rootValue === null || rootValue === undefined) {
+      this._value = ""
+    } else if (typeof rootValue === "string") {
+      this._value = rootValue
+    } else {
+      this._value = String(rootValue)
+    }
+    return this
   }
 
   toString(): string {

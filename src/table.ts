@@ -2,6 +2,7 @@
 
 import { Style } from "./style"
 import { borders, type BorderStyle } from "./border"
+import { getStringWidth } from "./ansi"
 
 /**
  * Table is a component for rendering tables.
@@ -105,7 +106,7 @@ export class Table {
 
     for (const row of allRows) {
       for (let i = 0; i < row.length; i++) {
-        const cellWidth = (row[i] || "").length
+        const cellWidth = getStringWidth(row[i] || "")
         if (cellWidth > colWidths[i]!) {
           colWidths[i] = cellWidth
         }
@@ -116,7 +117,7 @@ export class Table {
     if (this.headers.length > 0) {
       const headerLine = this.headers
         .map((cell, i) => {
-          const padding = colWidths[i]! - cell.length
+          const padding = colWidths[i]! - getStringWidth(cell)
           return this.headerStyle.render(cell + " ".repeat(padding))
         })
         .join(this.border ? this.border.left : " │ ")
@@ -135,7 +136,7 @@ export class Table {
     for (const row of this.rows) {
       const rowLine = row
         .map((cell, i) => {
-          const padding = (colWidths[i] || 0) - cell.length
+          const padding = (colWidths[i] || 0) - getStringWidth(cell)
           return this.cellStyle.render(cell + " ".repeat(Math.max(0, padding)))
         })
         .join(this.border ? this.border.left : " │ ")
@@ -153,7 +154,7 @@ export class Table {
     for (let i = 0; i < (this.headers.length || 0); i++) {
       let maxWidth = 0
       for (const row of allRows) {
-        const cellWidth = (row[i] || "").length
+        const cellWidth = getStringWidth(row[i] || "")
         if (cellWidth > maxWidth) maxWidth = cellWidth
       }
       this.widths.push(maxWidth)

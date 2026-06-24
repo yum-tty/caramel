@@ -1,10 +1,3 @@
-// writer.ts | output functions (lipgloss port)
-
-import { styleToString } from "./styled"
-
-/**
- * Writer wraps a writer with color profile support.
- */
 export class Writer {
   private writer: NodeJS.WriteStream
 
@@ -12,71 +5,56 @@ export class Writer {
     this.writer = writer
   }
 
-  /**
-   * Print writes styled text.
-   */
   print(...args: any[]): void {
     this.writer.write(args.join(" "))
   }
 
-  /**
-   * Println writes styled text with a newline.
-   */
   println(...args: any[]): void {
     this.writer.write(args.join(" ") + "\n")
   }
 
-  /**
-   * Printf writes formatted styled text.
-   */
   printf(format: string, ...args: any[]): void {
-    this.writer.write(format.replace(/%s/g, () => String(args.shift())))
+    this.writer.write(formatPrintf(format, args))
   }
 
-  /**
-   * Fprint writes to a specific writer.
-   */
   fprint(writer: NodeJS.WriteStream, ...args: any[]): void {
     writer.write(args.join(" "))
   }
 
-  /**
-   * Fprintln writes to a specific writer with a newline.
-   */
   fprintln(writer: NodeJS.WriteStream, ...args: any[]): void {
     writer.write(args.join(" ") + "\n")
   }
 
-  /**
-   * Fprintf writes formatted text to a specific writer.
-   */
   fprintf(writer: NodeJS.WriteStream, format: string, ...args: any[]): void {
-    writer.write(format.replace(/%s/g, () => String(args.shift())))
+    writer.write(formatPrintf(format, args))
   }
 
-  /**
-   * Sprint returns a string.
-   */
   sprint(...args: any[]): string {
     return args.join(" ")
   }
 
-  /**
-   * Sprintln returns a string with a newline.
-   */
   sprintln(...args: any[]): string {
     return args.join(" ") + "\n"
   }
 
-  /**
-   * Sprintf returns a formatted string.
-   */
   sprintf(format: string, ...args: any[]): string {
-    return format.replace(/%s/g, () => String(args.shift()))
+    return formatPrintf(format, args)
   }
 }
 
-/**
- * Default writer instance.
- */
+function formatPrintf(format: string, args: any[]): string {
+  let argIndex = 0
+  return format.replace(/%([dsfweEgGt%])/g, (match, spec) => {
+    if (spec === "%") return "%"
+    if (argIndex >= args.length) return match
+    const arg = args[argIndex++]
+    switch (spec) {
+      case "s": return String(arg)
+      case "d": return String(parseInt(arg, 10))
+      case "f": return String(parseFloat(arg))
+      default: return String(arg)
+    }
+  })
+}
+
 export const Writer_ = new Writer()

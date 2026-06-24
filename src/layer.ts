@@ -1,144 +1,244 @@
-// layer.ts | layer compositing (lipgloss port)
+// layer.ts | Layer and Compositor (lipgloss port)
 
-/**
- * LayerHit represents a hit test result.
- */
-export interface LayerHit {
-  id: string
-  x: number
-  y: number
-  width: number
-  height: number
+import { Width, Height } from "./size"
+
+export interface Rectangle {
+  minX: number
+  minY: number
+  maxX: number
+  maxY: number
+}
+
+function makeRect(x: number, y: number, w: number, h: number): Rectangle {
+  return { minX: x, minY: y, maxX: x + w, maxY: y + h }
+}
+
+function rectUnion(a: Rectangle, b: Rectangle): Rectangle {
+  return {
+    minX: Math.min(a.minX, b.minX),
+    minY: Math.min(a.minY, b.minY),
+    maxX: Math.max(a.maxX, b.maxX),
+    maxY: Math.max(a.maxY, b.maxY),
+  }
+}
+
+function rectOverlaps(a: Rectangle, b: Rectangle): boolean {
+  return a.minX < b.maxX && a.maxX > b.minX && a.minY < b.maxY && a.maxY > b.minY
+}
+
+function rectContainsPoint(r: Rectangle, x: number, y: number): boolean {
+  return x >= r.minX && x < r.maxX && y >= r.minY && y < r.maxY
 }
 
 /**
- * Layer represents a compositable layer.
+ * Layer represents a visual layer with content and positioning.
  */
 export class Layer {
-  private content: string
-  private id: string
-  private x: number
-  private y: number
-  private z: number
-  private layers: Layer[]
+  private _id: string = ""
+  private _content: string
+  private _width: number = 0
+  private _height: number = 0
+  private _x: number = 0
+  private _y: number = 0
+  private _z: number = 0
+  private _layers: Layer[] = []
 
-  constructor(content: string, layers: Layer[] = []) {
-    this.content = content
-    this.id = `layer_${Date.now()}_${Math.random().toString(36).slice(2)}`
-    this.x = 0
-    this.y = 0
-    this.z = 0
-    this.layers = layers
+  constructor(content: string = "", layers: Layer[] = []) {
+    this._content = content
+    this.addLayers(...layers)
   }
 
-  GetContent(): string { return this.content }
-  Width(): number { return this.content.split("\n").reduce((max, l) => Math.max(max, l.length), 0) }
-  Height(): number { return this.content.split("\n").length }
-  GetID(): string { return this.id }
-  ID(): string { return this.id }
-  GetX(): number { return this.x }
-  GetY(): number { return this.y }
-  GetZ(): number { return this.z }
-  X(x: number): void { this.x = x }
-  Y(y: number): void { this.y = y }
-  Z(z: number): void { this.z = z }
+  getContent(): string { return this._content }
+  width(): number { return this._width }
+  height(): number { return this._height }
+  getID(): string { return this._id }
 
-  AddLayers(layers: Layer[]): void { this.layers.push(...layers) }
-  GetLayer(id: string): Layer | undefined { return this.layers.find((l) => l.id === id) }
-  MaxZ(): number { return Math.max(0, ...this.layers.map((l) => l.z), this.z) }
+  id(id: string): Layer { this._id = id; return this }
+  x(x: number): Layer { this._x = x; return this }
+  y(y: number): Layer { this._y = y; return this }
+  z(z: number): Layer { this._z = z; return this }
+  getX(): number { return this._x }
+  getY(): number { return this._y }
+  getZ(): number { return this._z }
 
-  Draw(setCell: (x: number, y: number, char: string, style: string) => void): void {
-    const lines = this.content.split("\n")
-    for (let y = 0; y < lines.length; y++) {
-      for (let x = 0; x < lines[y]!.length; x++) {
-        setCell(this.x + x, this.y + y, lines[y]![x]!, "")
-      }
+  addLayers(...layers: Layer[]): Layer {
+    for (let i = 0; i < layers.length; i++) {
+      if (!layers[i]) throw new Error(`layer at index ${i} is nil`)
+      this._layers.push(layers[i]!)
     }
-    for (const layer of this.layers) {
-      layer.Draw(setCell)
-    }
-  }
-}
-
-/**
- * NewLayer creates a new layer.
- */
-export function NewLayer(content: string, ...layers: Layer[]): Layer {
-  return new Layer(content, layers)
-}
-
-/**
- * Compositor manages multiple layers.
- */
-export class Compositor {
-  private layers: Layer[]
-
-  constructor(...layers: Layer[]) {
-    this.layers = layers
+    const area = this.boundsWithOffset(0, 0)
+    this._width = area.maxX - area.minX
+    this._height = area.maxY - area.minY
+    return this
   }
 
-  AddLayers(layers: Layer[]): void { this.layers.push(...layers) }
-
-  Bounds(): { x: number; y: number; width: number; height: number } {
-    let minX = Infinity, minY = Infinity, maxX = 0, maxY = 0
-    for (const layer of this.layers) {
-      minX = Math.min(minX, layer.GetX())
-      minY = Math.min(minY, layer.GetY())
-      maxX = Math.max(maxX, layer.GetX() + layer.Width())
-      maxY = Math.max(maxY, layer.GetY() + layer.Height())
-    }
-    return { x: minX, y: minY, width: maxX - minX, height: maxY - minY }
-  }
-
-  Draw(setCell: (x: number, y: number, char: string, style: string) => void): void {
-    const sorted = [...this.layers].sort((a, b) => a.z - b.z)
-    for (const layer of sorted) {
-      layer.Draw(setCell)
-    }
-  }
-
-  Hit(x: number, y: number): LayerHit | null {
-    const sorted = [...this.layers].sort((a, b) => b.z - a.z)
-    for (const layer of sorted) {
-      if (x >= layer.GetX() && x < layer.GetX() + layer.Width() &&
-          y >= layer.GetY() && y < layer.GetY() + layer.Height()) {
-        return { id: layer.GetID(), x: layer.GetX(), y: layer.GetY(), width: layer.Width(), height: layer.Height() }
-      }
+  getLayer(id: string): Layer | null {
+    if (id === "") return null
+    if (this._id === id) return this
+    for (const child of this._layers) {
+      const found = child.getLayer(id)
+      if (found) return found
     }
     return null
   }
 
-  GetLayer(id: string): Layer | undefined { return this.layers.find((l) => l.GetID() === id) }
-
-  Render(): string {
-    const bounds = this.Bounds()
-    const lines: string[] = []
-    for (let y = 0; y < bounds.height; y++) {
-      let line = ""
-      for (let x = 0; x < bounds.width; x++) {
-        let char = " "
-        for (const layer of [...this.layers].sort((a, b) => a.z - b.z)) {
-          const lx = x - layer.GetX()
-          const ly = y - layer.GetY()
-          if (lx >= 0 && ly >= 0) {
-            const content = layer.GetContent()
-            const contentLines = content.split("\n")
-            if (ly < contentLines.length && lx < (contentLines[ly] || "").length) {
-              char = contentLines[ly]![lx]!
-            }
-          }
-        }
-        line += char
-      }
-      lines.push(line)
+  maxZ(): number {
+    let maxZ = this._z
+    for (const child of this._layers) {
+      const childMaxZ = child.maxZ()
+      if (childMaxZ > maxZ) maxZ = childMaxZ
     }
-    return lines.join("\n")
+    return maxZ
+  }
+
+  private boundsWithOffset(parentX: number, parentY: number): Rectangle {
+    const absX = this._x + parentX
+    const absY = this._y + parentY
+    const w = Width(this._content)
+    const h = Height(this._content)
+    let bounds = makeRect(absX, absY, w, h)
+    for (const child of this._layers) {
+      bounds = rectUnion(bounds, child.boundsWithOffset(absX, absY))
+    }
+    return bounds
+  }
+
+  draw(setCell: (x: number, y: number, char: string, style: string) => void): void {
+    const lines = this._content.split("\n")
+    for (let y = 0; y < lines.length; y++) {
+      const line = lines[y]!
+      for (let x = 0; x < line.length; x++) {
+        const ch = line[x]!
+        if (ch !== "\x1b") {
+          setCell(this._x + x, this._y + y, ch, "")
+        }
+      }
+    }
+    for (const child of this._layers) {
+      child.draw(setCell)
+    }
   }
 }
 
 /**
- * NewCompositor creates a new compositor.
+ * LayerHit represents the result of a hit test.
  */
-export function NewCompositor(...layers: Layer[]): Compositor {
-  return new Compositor(...layers)
+export class LayerHit {
+  private _id: string = ""
+  private _layer: Layer | null = null
+  private _bounds: Rectangle = { minX: 0, minY: 0, maxX: 0, maxY: 0 }
+
+  empty(): boolean { return this._layer === null }
+  id(): string { return this._id }
+  layer(): Layer | null { return this._layer }
+  bounds(): Rectangle { return this._bounds }
+
+  static from(id: string, layer: Layer | null, bounds: Rectangle): LayerHit {
+    const h = new LayerHit()
+    h._id = id
+    h._layer = layer
+    h._bounds = bounds
+    return h
+  }
+}
+
+interface CompositeLayer {
+  layer: Layer
+  absX: number
+  absY: number
+  bounds: Rectangle
+}
+
+/**
+ * Compositor manages the composition of layers.
+ */
+export class Compositor {
+  private root: Layer
+  private _layers: CompositeLayer[] = []
+  private index: Map<string, Layer> = new Map()
+  private _bounds: Rectangle = { minX: 0, minY: 0, maxX: 0, maxY: 0 }
+
+  constructor(...layers: Layer[]) {
+    this.root = new Layer()
+    this.root.addLayers(...layers)
+    this.flatten()
+  }
+
+  addLayers(...layers: Layer[]): Compositor {
+    this.root.addLayers(...layers)
+    this.flatten()
+    return this
+  }
+
+  private flatten(): void {
+    this._layers = []
+    this.index = new Map()
+    this.flattenRecursive(this.root, 0, 0)
+    this._layers.sort((a, b) => a.layer.getZ() - b.layer.getZ())
+    if (this._layers.length > 0) {
+      this._bounds = this._layers[0]!.bounds
+      for (let i = 1; i < this._layers.length; i++) {
+        this._bounds = rectUnion(this._bounds, this._layers[i]!.bounds)
+      }
+    }
+  }
+
+  private flattenRecursive(layer: Layer, parentX: number, parentY: number): void {
+    const absX = layer.getX() + parentX
+    const absY = layer.getY() + parentY
+    const w = Width(layer.getContent())
+    const h = Height(layer.getContent())
+    const bounds = makeRect(absX, absY, w, h)
+    this._layers.push({ layer, absX, absY, bounds })
+    if (layer.getID() !== "") this.index.set(layer.getID(), layer)
+  }
+
+  bounds(): Rectangle { return this._bounds }
+
+  draw(setCell: (x: number, y: number, char: string, style: string) => void): void {
+    for (const cl of this._layers) {
+      cl.layer.draw(setCell)
+    }
+  }
+
+  hit(x: number, y: number): LayerHit {
+    for (let i = this._layers.length - 1; i >= 0; i--) {
+      const cl = this._layers[i]!
+      if (cl.layer.getID() !== "" && rectContainsPoint(cl.bounds, x, y)) {
+        return LayerHit.from(cl.layer.getID(), cl.layer, cl.bounds)
+      }
+    }
+    return LayerHit.from("", null, { minX: 0, minY: 0, maxX: 0, maxY: 0 })
+  }
+
+  getLayer(id: string): Layer | null {
+    if (id === "") return null
+    return this.index.get(id) ?? null
+  }
+
+  refresh(): void { this.flatten() }
+
+  render(): string {
+    const w = this._bounds.maxX - this._bounds.minX
+    const h = this._bounds.maxY - this._bounds.minY
+    const grid: string[][] = []
+    for (let y = 0; y < h; y++) {
+      grid.push(new Array(w).fill(" "))
+    }
+    for (const cl of this._layers) {
+      const content = cl.layer.getContent()
+      const lines = content.split("\n")
+      for (let y = 0; y < lines.length; y++) {
+        const line = lines[y]!
+        for (let x = 0; x < line.length; x++) {
+          const gx = cl.absX - this._bounds.minX + x
+          const gy = cl.absY - this._bounds.minY + y
+          if (gy >= 0 && gy < h && gx >= 0 && gx < w) {
+            grid[gy]![gx] = line[x]!
+          }
+        }
+      }
+    }
+    return grid.map(row => row.join("")).join("\n")
+  }
 }

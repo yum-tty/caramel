@@ -1,10 +1,9 @@
-// style.ts | Style class (lipgloss port)
-
 import {
   type Color,
   NoColor,
   fg,
   bg,
+  ulColor as ulColorFn,
   reset,
   bold,
   dim,
@@ -13,9 +12,12 @@ import {
   blink,
   reverse,
   strikethrough,
+  colorToAnsi,
 } from "./color"
 import { type BorderStyle, borders, type BorderType, getTopSize, getRightSize, getBottomSize, getLeftSize } from "./border"
 import { type Position } from "./position"
+import { getStringWidth, stripAnsi } from "./ansi"
+import { Blend1D } from "./blending"
 
 export type TextAlign = "left" | "center" | "right"
 
@@ -72,6 +74,8 @@ export class Style {
   private _borderRightBgColor: Color = null
   private _borderBottomBgColor: Color = null
   private _borderLeftBgColor: Color = null
+  private _borderBlendFgColors: Color[] | null = null
+  private _borderForegroundBlendOffset: number = 0
 
   private _maxWidth: number = 0
   private _maxHeight: number = 0
@@ -302,7 +306,34 @@ export class Style {
   borderBottom(v: boolean): Style { const s = this.clone(); s._borderBottomEnabled = v; s._borderSidesSet = true; return s }
   borderLeft(v: boolean): Style { const s = this.clone(); s._borderLeftEnabled = v; s._borderSidesSet = true; return s }
 
-  borderForeground(c: Color): Style {
+  borderForeground(...c: Color[]): Style {
+    const s = this.clone()
+    if (c.length === 0) return s
+    if (c.length === 1) {
+      s._borderTopFgColor = c[0]!
+      s._borderRightFgColor = c[0]!
+      s._borderBottomFgColor = c[0]!
+      s._borderLeftFgColor = c[0]!
+    } else if (c.length === 2) {
+      s._borderTopFgColor = c[0]!
+      s._borderBottomFgColor = c[0]!
+      s._borderLeftFgColor = c[1]!
+      s._borderRightFgColor = c[1]!
+    } else if (c.length === 3) {
+      s._borderTopFgColor = c[0]!
+      s._borderLeftFgColor = c[1]!
+      s._borderRightFgColor = c[1]!
+      s._borderBottomFgColor = c[2]!
+    } else if (c.length >= 4) {
+      s._borderTopFgColor = c[0]!
+      s._borderRightFgColor = c[1]!
+      s._borderBottomFgColor = c[2]!
+      s._borderLeftFgColor = c[3]!
+    }
+    return s
+  }
+
+  borderColor(c: Color): Style {
     const s = this.clone()
     s._borderTopFgColor = c
     s._borderRightFgColor = c
@@ -311,14 +342,24 @@ export class Style {
     return s
   }
 
-  borderColor(c: Color): Style {
-    return this.borderForeground(c)
-  }
-
   borderTopForeground(c: Color): Style { const s = this.clone(); s._borderTopFgColor = c; return s }
   borderRightForeground(c: Color): Style { const s = this.clone(); s._borderRightFgColor = c; return s }
   borderBottomForeground(c: Color): Style { const s = this.clone(); s._borderBottomFgColor = c; return s }
   borderLeftForeground(c: Color): Style { const s = this.clone(); s._borderLeftFgColor = c; return s }
+
+  borderForegroundBlend(...c: Color[]): Style {
+    const s = this.clone()
+    if (c.length === 0) return s
+    if (c.length === 1) return s.borderForeground(c[0]!)
+    s._borderBlendFgColors = c
+    return s
+  }
+
+  borderForegroundBlendOffset(v: number): Style {
+    const s = this.clone()
+    s._borderForegroundBlendOffset = v
+    return s
+  }
 
   borderTopBackground(c: Color): Style { const s = this.clone(); s._borderTopBgColor = c; return s }
   borderRightBackground(c: Color): Style { const s = this.clone(); s._borderRightBgColor = c; return s }
@@ -407,19 +448,53 @@ export class Style {
 
     if (this._transformFn) str = this._transformFn(str)
 
-    const hasStyles = this._attrs !== 0 || this._fgColor !== null || this._bgColor !== null
+    const hasStyles = this._attrs !== 0 || this._fgColor !== null || this._bgColor !== null || this._ulColor !== null || this._ul !== "none"
     if (!hasStyles) return this.maybeConvertTabs(str)
 
-    const ansiAttrs: string[] = []
-    if (this._attrs & Style.BOLD) ansiAttrs.push(bold)
-    if (this._attrs & Style.DIM) ansiAttrs.push(dim)
-    if (this._attrs & Style.ITALIC) ansiAttrs.push(italic)
-    if (this._attrs & Style.REVERSE) ansiAttrs.push(reverse)
-    if (this._attrs & Style.BLINK) ansiAttrs.push(blink)
-    if (this._attrs & Style.STRIKETHROUGH) ansiAttrs.push(strikethrough)
-    if (this._fgColor !== null) ansiAttrs.push(fg(this._fgColor))
-    if (this._bgColor !== null) ansiAttrs.push(bg(this._bgColor))
-    if (this._ul !== "none") ansiAttrs.push(underline)
+    const bold_ = (this._attrs & Style.BOLD) !== 0
+    const italic_ = (this._attrs & Style.ITALIC) !== 0
+    const strikethrough_ = (this._attrs & Style.STRIKETHROUGH) !== 0
+    const reverse_ = (this._attrs & Style.REVERSE) !== 0
+    const blink_ = (this._attrs & Style.BLINK) !== 0
+    const faint_ = (this._attrs & Style.DIM) !== 0
+    const underline_ = this._ul !== "none"
+
+    const fgColor = this._fgColor
+    const bgColor = this._bgColor
+    const ulColor = this._ulColor
+
+    const styleWhitespace = reverse_
+    const useSpaceStyler = (underline_ && !this._underlineSpaces) ||
+      (strikethrough_ && !this._strikethroughSpaces) ||
+      this._underlineSpaces || this._strikethroughSpaces
+
+    let te = ""
+    let teSpace = ""
+    let teWhitespace = ""
+
+    if (bold_) te += bold
+    if (italic_) te += italic
+    if (underline_) te += underline
+    if (reverse_) { te += reverse; teWhitespace += reverse }
+    if (blink_) te += blink
+    if (faint_) te += dim
+    if (strikethrough_) te += strikethrough
+
+    if (fgColor !== null) {
+      te += fg(fgColor)
+      if (styleWhitespace) teWhitespace += fg(fgColor)
+      if (useSpaceStyler) teSpace += fg(fgColor)
+    }
+    if (bgColor !== null) {
+      te += bg(bgColor)
+      teWhitespace += bg(bgColor)
+      if (useSpaceStyler) teSpace += bg(bgColor)
+    }
+    if (ulColor !== null) {
+      te += ulColorFn(ulColor)
+      teWhitespace += ulColorFn(ulColor)
+      if (useSpaceStyler) teSpace += ulColorFn(ulColor)
+    }
 
     str = this.maybeConvertTabs(str)
     str = str.replace(/\r\n/g, "\n")
@@ -436,19 +511,39 @@ export class Style {
       str = wordWrapStr(str, wrapAt)
     }
 
-    if (ansiAttrs.length > 0) {
+    {
       const lines = str.split("\n")
-      str = lines.map(line => ansiAttrs.join("") + line + reset).join("\n")
+      const styledLines: string[] = []
+      for (const line of lines) {
+        if (line.length === 0) {
+          styledLines.push("")
+        } else if (useSpaceStyler) {
+          let styled = ""
+          for (const ch of line) {
+            if (/\s/.test(ch)) {
+              styled += teSpace + ch + reset
+            } else {
+              styled += te + ch + reset
+            }
+          }
+          styledLines.push(styled)
+        } else {
+          styledLines.push(te + line + reset)
+        }
+      }
+      str = styledLines.join(reset + "\n")
     }
 
     if (this._link) {
-      str = `\x1b]8;;${this._link}\x1b\\${str}\x1b]8;;\x1b\\`
+      str = `\x1b]8;;${this._link}\x07${str}\x1b]8;;\x07`
     }
 
     if (!this._inline) {
+      const useWhitespaceStyle = this._bgColor !== null || styleWhitespace
+      const whitespaceStyle = useWhitespaceStyle ? teWhitespace : ""
       const padChar = this._paddingChar || " "
-      if (this._paddingLeft > 0) str = padStr(str, -this._paddingLeft, padChar)
-      if (this._paddingRight > 0) str = padStr(str, this._paddingRight, padChar)
+      if (this._paddingLeft > 0) str = padStr(str, -this._paddingLeft, padChar, whitespaceStyle)
+      if (this._paddingRight > 0) str = padStr(str, this._paddingRight, padChar, whitespaceStyle)
       if (this._paddingTop > 0) str = "\n".repeat(this._paddingTop) + str
       if (this._paddingBottom > 0) str += "\n".repeat(this._paddingBottom)
     }
@@ -456,7 +551,9 @@ export class Style {
     if (blockHeight > 0) str = alignTextVertical(str, this._alignV, blockHeight)
 
     if (blockWidth > 0 || str.includes("\n")) {
-      str = alignTextHorizontal(str, this._alignH, blockWidth)
+      const useWhitespaceStyle = this._bgColor !== null || styleWhitespace
+      const whitespaceStyle = useWhitespaceStyle ? teWhitespace : ""
+      str = alignTextHorizontal(str, this._alignH, blockWidth, whitespaceStyle)
     }
 
     if (!this._inline) {
@@ -475,10 +572,8 @@ export class Style {
     return str
   }
 
-  static width(str: string): number { return stripAnsi(str).length }
+  static width(str: string): number { return getStringWidth(str) }
   static height(str: string): number { return str.split("\n").length }
-
-  // Getters
 
   getBold(): boolean { return (this._attrs & Style.BOLD) !== 0 }
   getItalic(): boolean { return (this._attrs & Style.ITALIC) !== 0 }
@@ -526,6 +621,8 @@ export class Style {
   getBorderRightBackground(): Color { return this._borderRightBgColor }
   getBorderBottomBackground(): Color { return this._borderBottomBgColor }
   getBorderLeftBackground(): Color { return this._borderLeftBgColor }
+  getBorderForegroundBlend(): Color[] | null { return this._borderBlendFgColors }
+  getBorderForegroundBlendOffset(): number { return this._borderForegroundBlendOffset }
   getBorderTopSize(): number {
     if (this._borderStyle && !this._borderSidesSet) return 1
     if (!this._borderTopEnabled) return 0
@@ -558,8 +655,6 @@ export class Style {
   getHyperlink(): [string, string] { return [this._link, this._linkParams] }
   getHorizontalFrameSize(): number { return this.getHorizontalMargins() + this.getHorizontalPadding() + this.getHorizontalBorderSize() }
   getVerticalFrameSize(): number { return this.getVerticalMargins() + this.getVerticalPadding() + this.getVerticalBorderSize() }
-
-  // Unsetters
 
   unsetBold(): Style { const s = this.clone(); s._attrs &= ~Style.BOLD; return s }
   unsetItalic(): Style { const s = this.clone(); s._attrs &= ~Style.ITALIC; return s }
@@ -674,6 +769,8 @@ export class Style {
     s._borderRightBgColor = this._borderRightBgColor
     s._borderBottomBgColor = this._borderBottomBgColor
     s._borderLeftBgColor = this._borderLeftBgColor
+    s._borderBlendFgColors = this._borderBlendFgColors
+    s._borderForegroundBlendOffset = this._borderForegroundBlendOffset
     s._maxWidth = this._maxWidth
     s._maxHeight = this._maxHeight
     s._tabWidth = this._tabWidth
@@ -693,37 +790,176 @@ export class Style {
   }
 
   private applyMargins(str: string): string {
-    if (!this._marginTop && !this._marginRight && !this._marginBottom && !this._marginLeft) return str
+    const topMargin = this._marginTop
+    const rightMargin = this._marginRight
+    const bottomMargin = this._marginBottom
+    const leftMargin = this._marginLeft
+
+    if (!topMargin && !rightMargin && !bottomMargin && !leftMargin) return str
+
+    const marginBg = this._marginBg
+    let marginStyle = ""
+    if (marginBg !== null) {
+      marginStyle = bg(marginBg)
+    }
+
+    const marginChar = this._marginChar || " "
+
+    const leftPad = marginStyle ? marginStyle + marginChar.repeat(leftMargin) + reset : marginChar.repeat(leftMargin)
+    const rightPad = marginStyle ? marginStyle + marginChar.repeat(rightMargin) + reset : marginChar.repeat(rightMargin)
+
     const lines = str.split("\n")
-    const ml = this._marginChar || " "
-    const padLeft = ml.repeat(this._marginLeft)
-    const padRight = ml.repeat(this._marginRight)
-    const margined = lines.map((line) => padLeft + line + padRight)
-    const topPad = Array(this._marginTop).fill("").join("\n")
-    const bottomPad = Array(this._marginBottom).fill("").join("\n")
-    return [topPad, margined.join("\n"), bottomPad].filter(Boolean).join("\n")
+    const margined = lines.map((line) => leftPad + line + rightPad)
+
+    const topPadLines: string[] = []
+    const bottomPadLines: string[] = []
+
+    if (topMargin > 0) {
+      const [, marginWidth] = getLines(str)
+      const spaces = marginStyle ? marginStyle + " ".repeat(marginWidth) + reset : " ".repeat(marginWidth)
+      for (let i = 0; i < topMargin; i++) {
+        topPadLines.push(spaces)
+      }
+    }
+    if (bottomMargin > 0) {
+      const [, marginWidth2] = getLines(str)
+      const spaces = marginStyle ? marginStyle + " ".repeat(marginWidth2) + reset : " ".repeat(marginWidth2)
+      for (let i = 0; i < bottomMargin; i++) {
+        bottomPadLines.push(spaces)
+      }
+    }
+
+    return [...topPadLines, ...margined, ...bottomPadLines].join("\n")
   }
 
   private applyBorder(str: string): string {
-    if (!this._borderStyle) return str
-    const lines = str.split("\n")
-    const maxW = Math.max(...lines.map((l) => stripAnsi(l).length), 0)
+    const border = this._borderStyle
+    if (!border) return str
+
+    let hasTop = this._borderSidesSet ? this._borderTopEnabled : true
+    let hasRight = this._borderSidesSet ? this._borderRightEnabled : true
+    let hasBottom = this._borderSidesSet ? this._borderBottomEnabled : true
+    let hasLeft = this._borderSidesSet ? this._borderLeftEnabled : true
+
+    if (!hasTop && !hasRight && !hasBottom && !hasLeft) return str
+
+    const [lines, width] = getLines(str)
+
+    let leftWidth = hasLeft ? getLeftSize(border) : 0
+    let rightWidth = hasRight ? getRightSize(border) : 0
+    const borderWidth = width + leftWidth + rightWidth
+
+    let tl = border.topLeft
+    let tr = border.topRight
+    let bl = border.bottomLeft
+    let br = border.bottomRight
+
+    if (hasTop && hasLeft && tl === "") tl = " "
+    if (hasTop && hasRight && tr === "") tr = " "
+    if (hasBottom && hasLeft && bl === "") bl = " "
+    if (hasBottom && hasRight && br === "") br = " "
+
+    if (hasTop) {
+      if (!hasLeft && !hasRight) { tl = ""; tr = "" }
+      else if (!hasLeft) { tl = "" }
+      else if (!hasRight) { tr = "" }
+    }
+    if (hasBottom) {
+      if (!hasLeft && !hasRight) { bl = ""; br = "" }
+      else if (!hasLeft) { bl = "" }
+      else if (!hasRight) { br = "" }
+    }
+
+    tl = getFirstRune(tl)
+    tr = getFirstRune(tr)
+    br = getFirstRune(br)
+    bl = getFirstRune(bl)
+
+    const topFg = this._borderTopFgColor
+    const rightFg = this._borderRightFgColor
+    const bottomFg = this._borderBottomFgColor
+    const leftFg = this._borderLeftFgColor
+    const topBg = this._borderTopBgColor
+    const rightBg = this._borderRightBgColor
+    const bottomBg = this._borderBottomBgColor
+    const leftBg = this._borderLeftBgColor
+    const blendFG = this._borderBlendFgColors
+
+    let blend: string[] | null = null
+    if (blendFG && blendFG.length >= 2) {
+      const totalSteps = (borderWidth + 2) * 2
+      blend = Blend1D(totalSteps, ...(blendFG as string[]))
+      if (this._borderForegroundBlendOffset !== 0) {
+        let r = -this._borderForegroundBlendOffset
+        const n = blend.length
+        r = ((r % n) + n) % n
+        blend = [...blend.slice(r), ...blend.slice(0, r)].reverse()
+      }
+    }
+
+    const out: string[] = []
+
+    if (hasTop) {
+      const top = renderHorizontalEdge(tl, border.top || " ", tr, borderWidth)
+      if (blend) {
+        out.push(styleBorderGradient(top, blend.slice(0, borderWidth + 2), topBg))
+      } else {
+        out.push(styleBorderStr(top, topFg, topBg))
+      }
+    }
+
+    const leftRunes = [...(border.left || " ")]
+    const rightRunes = [...(border.right || " ")]
+    let leftIndex = 0
+    let rightIndex = 0
+
     const padded = lines.map((line) => {
-      const vis = stripAnsi(line).length
-      return line + " ".repeat(maxW - vis)
+      const vis = getStringWidth(line)
+      if (vis < width) return line + " ".repeat(width - vis)
+      return line
     })
-    const hasTop = this._borderSidesSet ? this._borderTopEnabled : true
-    const hasRight = this._borderSidesSet ? this._borderRightEnabled : true
-    const hasBottom = this._borderSidesSet ? this._borderBottomEnabled : true
-    const hasLeft = this._borderSidesSet ? this._borderLeftEnabled : true
-    const top = hasTop ? this._borderStyle.topLeft + this._borderStyle.top.repeat(maxW) + this._borderStyle.topRight : ""
-    const bottom = hasBottom ? this._borderStyle.bottomLeft + this._borderStyle.bottom.repeat(maxW) + this._borderStyle.bottomRight : ""
-    const middle = padded.map((line) => (hasLeft ? this._borderStyle!.left : "") + line + (hasRight ? this._borderStyle!.right : ""))
-    const parts: string[] = []
-    if (hasTop) parts.push(top)
-    parts.push(...middle)
-    if (hasBottom) parts.push(bottom)
-    return parts.join("\n")
+
+    const sideStart = borderWidth + 2
+
+    for (let i = 0; i < padded.length; i++) {
+      if (hasLeft) {
+        const r = leftRunes[leftIndex % leftRunes.length]!
+        leftIndex++
+        if (blend) {
+          out.push(styleBorderStr(r, blend[sideStart + i] || leftFg, leftBg))
+        } else {
+          out.push(styleBorderStr(r, leftFg, leftBg))
+        }
+      }
+      out.push(padded[i]!)
+      if (hasRight) {
+        const r = rightRunes[rightIndex % rightRunes.length]!
+        rightIndex++
+        if (blend) {
+          const ri = sideStart + lines.length + i
+          out.push(styleBorderStr(r, blend[ri] || rightFg, rightBg))
+        } else {
+          out.push(styleBorderStr(r, rightFg, rightBg))
+        }
+      }
+      if (i < padded.length - 1) {
+        out.push("\n")
+      }
+    }
+
+    if (hasBottom) {
+      const bottomEdgeStart = borderWidth + 2 + lines.length * 2
+      const bottom = renderHorizontalEdge(bl, border.bottom || " ", br, borderWidth)
+      out.push("\n")
+      if (blend) {
+        const bottomGrad = blend.slice(bottomEdgeStart, bottomEdgeStart + borderWidth + 2).reverse()
+        out.push(styleBorderGradient(bottom, bottomGrad, bottomBg))
+      } else {
+        out.push(styleBorderStr(bottom, bottomFg, bottomBg))
+      }
+    }
+
+    return out.join("")
   }
 }
 
@@ -735,8 +971,59 @@ function resolveSides(sides: boolean[]): [boolean, boolean, boolean, boolean] {
   return [true, true, true, true]
 }
 
-function stripAnsi(str: string): string {
-  return str.replace(/\x1b\[[0-9;]*m/g, "")
+function getFirstRune(str: string): string {
+  if (str === "") return str
+  const iter = str[Symbol.iterator]()
+  const first = iter.next()
+  return first.done ? "" : first.value
+}
+
+function renderHorizontalEdge(left: string, middle: string, right: string, width: number): string {
+  const leftWidth = getStringWidth(left)
+  const rightWidth = getStringWidth(right)
+  const middleRunes = [...middle]
+  let out = left
+  let j = 0
+  for (let i = 0; i < width - leftWidth - rightWidth;) {
+    const r = middleRunes[j % middleRunes.length]!
+    out += r
+    i += getStringWidth(r)
+    j++
+  }
+  out += right
+  return out
+}
+
+function styleBorderStr(border: string, fgColor: Color | null, bgColor: Color | null): string {
+  if (!fgColor && !bgColor) return border
+  let style = ""
+  if (fgColor) style += fg(fgColor)
+  if (bgColor) style += bg(bgColor)
+  return style + border + reset
+}
+
+function styleBorderGradient(border: string, fgColors: string[], bgColor: Color | null): string {
+  const chars = [...border]
+  let out = ""
+  for (let i = 0; i < chars.length; i++) {
+    const ch = chars[i]!
+    let style = ""
+    if (i < fgColors.length) style += `\x1b[${colorToAnsi(fgColors[i]!, "38")}m`
+    if (bgColor) style += bg(bgColor)
+    out += style + ch + reset
+  }
+  return out
+}
+
+function getLines(s: string): [string[], number] {
+  let str = s.replace(/\t/g, "    ").replace(/\r\n/g, "\n")
+  const lines = str.split("\n")
+  let widest = 0
+  for (const l of lines) {
+    const w = getStringWidth(l)
+    if (w > widest) widest = w
+  }
+  return [lines, widest]
 }
 
 function wordWrapStr(str: string, maxWidth: number): string {
@@ -744,11 +1031,11 @@ function wordWrapStr(str: string, maxWidth: number): string {
   const lines = str.split("\n")
   const result: string[] = []
   for (const line of lines) {
-    if (stripAnsi(line).length <= maxWidth) { result.push(line); continue }
+    if (getStringWidth(line) <= maxWidth) { result.push(line); continue }
     const words = line.split(" ")
     let currentLine = ""
     for (const word of words) {
-      if (currentLine && (currentLine + " " + word).replace(/\x1b\[[0-9;]*m/g, "").length > maxWidth) {
+      if (currentLine && getStringWidth(currentLine + " " + word) > maxWidth) {
         result.push(currentLine)
         currentLine = word
       } else {
@@ -760,18 +1047,21 @@ function wordWrapStr(str: string, maxWidth: number): string {
   return result.join("\n")
 }
 
-function alignTextHorizontal(str: string, align: TextAlign, width: number): string {
+function alignTextHorizontal(str: string, align: TextAlign, width: number, whitespaceStyle: string = ""): string {
   const lines = str.split("\n")
   return lines.map((line) => {
-    const vis = stripAnsi(line).length
+    const vis = getStringWidth(line)
     if (width > 0 && vis < width) {
       const padding = width - vis
+      const pad = whitespaceStyle ? whitespaceStyle + " ".repeat(padding) + reset : " ".repeat(padding)
       if (align === "center") {
         const left = Math.floor(padding / 2)
-        return " ".repeat(left) + line + " ".repeat(padding - left)
+        const lPad = whitespaceStyle ? whitespaceStyle + " ".repeat(left) + reset : " ".repeat(left)
+        const rPad = whitespaceStyle ? whitespaceStyle + " ".repeat(padding - left) + reset : " ".repeat(padding - left)
+        return lPad + line + rPad
       }
-      if (align === "right") return " ".repeat(padding) + line
-      return line + " ".repeat(padding)
+      if (align === "right") return pad + line
+      return line + pad
     }
     if (width > 0 && vis > width) return truncateStr(line, width)
     return line
@@ -791,7 +1081,7 @@ function alignTextVertical(str: string, align: TextAlign, height: number): strin
 }
 
 function truncateStr(str: string, maxWidth: number): string {
-  if (stripAnsi(str).length <= maxWidth) return str
+  if (getStringWidth(str) <= maxWidth) return str
   let result = ""
   let count = 0
   let inEscape = false
@@ -805,9 +1095,10 @@ function truncateStr(str: string, maxWidth: number): string {
   return result
 }
 
-function padStr(str: string, n: number, char: string): string {
+function padStr(str: string, n: number, char: string, style: string = ""): string {
   if (n === 0) return str
-  const sp = char.repeat(Math.abs(n))
+  const abs = Math.abs(n)
+  const sp = style ? style + char.repeat(abs) + reset : char.repeat(abs)
   return str.split("\n").map((line) => n > 0 ? line + sp : sp + line).join("\n")
 }
 
