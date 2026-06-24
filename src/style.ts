@@ -1012,7 +1012,15 @@ function styleBorderGradient(border: string, fgColors: string[], bgColor: Color 
   for (let i = 0; i < chars.length; i++) {
     const ch = chars[i]!
     let style = ""
-    if (i < fgColors.length) style += `\x1b[${colorToAnsi(fgColors[i]!, "38")}m`
+    if (i < fgColors.length) {
+      // Use Bun.color for hex strings, fallback for others
+      const c = fgColors[i]!
+      if (c.startsWith("#")) {
+        style += Bun.color(c, "ansi") ?? `\x1b[${colorToAnsi(c, "38")}m`
+      } else {
+        style += `\x1b[${colorToAnsi(c, "38")}m`
+      }
+    }
     if (bgColor) style += bg(bgColor)
     out += style + ch + reset
   }
