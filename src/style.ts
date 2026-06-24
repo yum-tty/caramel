@@ -927,6 +927,7 @@ export class Style {
     const sideStart = borderWidth + 2
 
     for (let i = 0; i < padded.length; i++) {
+      if (i === 0) out.push("\n")
       if (hasLeft) {
         const r = leftRunes[leftIndex % leftRunes.length]!
         leftIndex++
