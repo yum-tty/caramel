@@ -1,0 +1,42 @@
+{
+  "name": "caramel",
+  "version": "0.1.0",
+  "description": "Style definitions for nice terminal layouts. A TypeScript port of Lip Gloss for Bun.",
+  "module": "src/index.ts",
+  "type": "module",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "exports": {
+    ".": {
+      "import": "./src/index.ts",
+      "types": "./src/index.ts"
+    }
+  },
+  "files": [
+    "src/**/*",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "dev": "bun --watch src",
+    "typecheck": "bun run --bun tsc --noEmit"
+  },
+  "keywords": [
+    "tui",
+    "terminal",
+    "cli",
+    "style",
+    "ansi",
+    "lipgloss",
+    "bun"
+  ],
+  "author": "yum-tty",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yum-tty/caramel"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  }
+}
