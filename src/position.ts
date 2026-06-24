@@ -19,3 +19,6 @@ export const Right: Position = 1.0
 export function positionValue(p: Position): number {
   return Math.min(1, Math.max(0, p))
 }
+
+// Re-export type
+export type { Position }

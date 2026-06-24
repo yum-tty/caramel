@@ -164,6 +164,6 @@ export class Table {
 /**
  * Create a new table.
  */
-export function Table(): Table {
+export function CreateTable(): Table {
   return new Table()
 }

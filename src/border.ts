@@ -79,6 +79,50 @@ export const borders = {
     bottomLeft: "└",
     bottomRight: "┘",
   } as BorderStyle,
+
+  block: {
+    top: "▀",
+    bottom: "▄",
+    left: "█",
+    right: "█",
+    topLeft: "█",
+    topRight: "█",
+    bottomLeft: "█",
+    bottomRight: "█",
+  } as BorderStyle,
+
+  hidden: {
+    top: " ",
+    bottom: " ",
+    left: " ",
+    right: " ",
+    topLeft: " ",
+    topRight: " ",
+    bottomLeft: " ",
+    bottomRight: " ",
+  } as BorderStyle,
+
+  markdown: {
+    top: "",
+    bottom: "",
+    left: ">",
+    right: "",
+    topLeft: "",
+    topRight: "",
+    bottomLeft: "",
+    bottomRight: "",
+  } as BorderStyle,
+
+  ascii: {
+    top: "-",
+    bottom: "-",
+    left: "|",
+    right: "|",
+    topLeft: "+",
+    topRight: "+",
+    bottomLeft: "+",
+    bottomRight: "+",
+  } as BorderStyle,
 } as const
 
 export type BorderType = keyof typeof borders
