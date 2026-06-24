@@ -96,6 +96,7 @@ export function UnsetTransform(): Style { return _s().unsetTransform() }
 export function UnsetHyperlink(): Style { return _s().unsetHyperlink() }
 export function UnsetTabWidth(): Style { return _s().unsetTabWidth() }
 export function UnsetString(): Style { return _s().unsetString() }
+export function UnsetColorWhitespace(): Style { return _s().unsetColorWhitespace() }
 
 // ── Standalone getters (Go: lipgloss.GetWidth(s)) ──
 export function GetWidth(s: Style): number { return s.getWidth() }
@@ -170,6 +171,7 @@ export function GetFrameSize(s: Style): [number, number] {
 export function GetBorder(s: Style): [BorderType | null, boolean, boolean, boolean, boolean] {
   return [s.getBorderStyle(), s.getBorderTop(), s.getBorderRight(), s.getBorderBottom(), s.getBorderLeft()]
 }
+export function GetColorWhitespace(s: Style): boolean { return s.getColorWhitespace() }
 
 // ── IO functions ──
 const _writer = new Writer()

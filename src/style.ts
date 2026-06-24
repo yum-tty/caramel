@@ -84,6 +84,7 @@ export class Style {
 
   private _underlineSpaces: boolean = false
   private _strikethroughSpaces: boolean = false
+  private _colorWhitespace: boolean = true
 
   private _transformFn: ((s: string) => string) | null = null
 
@@ -469,6 +470,7 @@ export class Style {
     const ulColor = this._ulColor
 
     const styleWhitespace = reverse_
+    const colorWhitespace = this._colorWhitespace
     const useSpaceStyler = (underline_ && !this._underlineSpaces) ||
       (strikethrough_ && !this._strikethroughSpaces) ||
       this._underlineSpaces || this._strikethroughSpaces
@@ -492,7 +494,7 @@ export class Style {
     }
     if (bgColor !== null) {
       te += bg(bgColor)
-      teWhitespace += bg(bgColor)
+      if (colorWhitespace || styleWhitespace) teWhitespace += bg(bgColor)
       if (useSpaceStyler) teSpace += bg(bgColor)
     }
     if (ulColor !== null) {
@@ -544,7 +546,7 @@ export class Style {
     }
 
     if (!this._inline) {
-      const useWhitespaceStyle = this._bgColor !== null || styleWhitespace
+      const useWhitespaceStyle = colorWhitespace || styleWhitespace
       const whitespaceStyle = useWhitespaceStyle ? teWhitespace : ""
       const padChar = this._paddingChar || " "
       if (this._paddingLeft > 0) str = padStr(str, -this._paddingLeft, padChar, whitespaceStyle)
@@ -556,7 +558,7 @@ export class Style {
     if (blockHeight > 0) str = alignTextVertical(str, this._alignV, blockHeight)
 
     if (blockWidth > 0 || str.includes("\n")) {
-      const useWhitespaceStyle = this._bgColor !== null || styleWhitespace
+      const useWhitespaceStyle = colorWhitespace || styleWhitespace
       const whitespaceStyle = useWhitespaceStyle ? teWhitespace : ""
       str = alignTextHorizontal(str, this._alignH, blockWidth, whitespaceStyle)
     }
@@ -656,6 +658,7 @@ export class Style {
   getTabWidth(): number { return this._tabWidth }
   getUnderlineSpaces(): boolean { return this._underlineSpaces }
   getStrikethroughSpaces(): boolean { return this._strikethroughSpaces }
+  getColorWhitespace(): boolean { return this._colorWhitespace }
   getTransform(): ((s: string) => string) | null { return this._transformFn }
   getHyperlink(): [string, string] { return [this._link, this._linkParams] }
   getHorizontalFrameSize(): number { return this.getHorizontalMargins() + this.getHorizontalPadding() + this.getHorizontalBorderSize() }
@@ -731,6 +734,7 @@ export class Style {
   unsetTabWidth(): Style { const s = this.clone(); s._tabWidth = DEFAULT_TAB_WIDTH; return s }
   unsetUnderlineSpaces(): Style { const s = this.clone(); s._underlineSpaces = false; return s }
   unsetStrikethroughSpaces(): Style { const s = this.clone(); s._strikethroughSpaces = false; return s }
+  unsetColorWhitespace(): Style { const s = this.clone(); s._colorWhitespace = false; return s }
   unsetTransform(): Style { const s = this.clone(); s._transformFn = null; return s }
   unsetHyperlink(): Style { const s = this.clone(); s._link = ""; s._linkParams = ""; return s }
   unsetString(): Style { const s = this.clone(); s._value = ""; return s }
@@ -782,6 +786,7 @@ export class Style {
     s._inline = this._inline
     s._underlineSpaces = this._underlineSpaces
     s._strikethroughSpaces = this._strikethroughSpaces
+    s._colorWhitespace = this._colorWhitespace
     s._transformFn = this._transformFn
     return s
   }
