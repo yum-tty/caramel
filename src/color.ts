@@ -62,53 +62,32 @@ export function colorToAnsi(color: Color, prefix: "38" | "48" | "58"): string {
 
   let c: Color = color as Color
 
+  // Resolve adaptive/TrueColor wrappers
   if (typeof c === "object" && c !== null && "Light" in c) {
     const adaptive = c as any
     const term = typeof process !== 'undefined' ? (process.env?.TERM_PROGRAM || process.env?.COLORTERM || process.env?.TERM || '') : ''
     const isDark = term.includes('dark') || (typeof process !== 'undefined' && process.env?.THEME === 'dark')
     c = isDark ? adaptive.Dark as Color : adaptive.Light as Color
   }
-
   if (typeof c === "object" && c !== null && "TrueColor" in c) {
     c = (c as any).TrueColor as Color
   }
 
-  if (typeof c === "string") {
-    // Bun.color handles hex strings, CSS names, rgb() strings
-    if (c.startsWith("#") || c.startsWith("rgb") || c.startsWith("hsl") || /^[a-z]+$/i.test(c)) {
-      const rgba = Bun.color(c, "[rgba]")
-      if (rgba) {
-        return `${prefix};2;${rgba[0]};${rgba[1]};${rgba[2]}`
-      }
+  // Bun.color handles: hex strings, CSS names, rgb/hsl strings, RGB objects, RGB arrays, numbers (as RGB)
+  if (typeof c === "string" || (typeof c === "object" && c !== null && ("r" in c || Array.isArray(c)))) {
+    const rgba = Bun.color(c as any, "[rgba]")
+    if (rgba) {
+      return `${prefix};2;${rgba[0]};${rgba[1]};${rgba[2]}`
     }
-    // Fallback: check named colors (4-bit ANSI)
-    const namedColors: Record<string, number> = {
-      black: 0, red: 1, green: 2, yellow: 3,
-      blue: 4, magenta: 5, cyan: 6, white: 7,
-      brightBlack: 8, brightRed: 9, brightGreen: 10,
-      brightYellow: 11, brightBlue: 12, brightMagenta: 13,
-      brightCyan: 14, brightWhite: 15,
-    }
-    if (c in namedColors) {
-      const v = namedColors[c]!
-      if (prefix === "58") return `${prefix};5;${v}`
-      if (prefix === "38") return v < 8 ? `${30 + v}` : `${82 + v}`
-      return v < 8 ? `${40 + v}` : `${92 + v}`
-    }
-    const num = parseInt(c)
-    if (!isNaN(num)) {
-      const i = num < 0 ? -num : num
-      if (i < 16) {
-        if (prefix === "58") return `${prefix};5;${i}`
-        if (prefix === "38") return i < 8 ? `${30 + i}` : `${82 + i}`
-        return i < 8 ? `${40 + i}` : `${92 + i}`
-      }
-      return `${prefix};5;${i}`
-    }
-    return ""
   }
 
+  // Bun.color handles numbers as RGB values
   if (typeof c === "number") {
+    const rgba = Bun.color(c, "[rgba]")
+    if (rgba) {
+      return `${prefix};2;${rgba[0]};${rgba[1]};${rgba[2]}`
+    }
+    // Fallback for small numbers (ANSI 4-bit/256 indices)
     const i = c < 0 ? -c : c
     if (i < 16) {
       if (prefix === "58") return `${prefix};5;${i}`
@@ -117,14 +96,18 @@ export function colorToAnsi(color: Color, prefix: "38" | "48" | "58"): string {
     }
     return `${prefix};5;${c}`
   }
-  if (c !== null && typeof c === "object" && "r" in c) return `${prefix};2;${c.r};${c.g};${c.b}`
-  if (c !== null && typeof c === "object" && "ansi" in c) {
+
+  // Bun.color can't handle {ansi:N} or {ansi256:N} — manual handling
+  if (typeof c === "object" && c !== null && "ansi" in c) {
     const v = (c as {ansi: number}).ansi
     if (prefix === "58") return `${prefix};5;${v}`
     if (prefix === "38") return v < 8 ? `${30 + v}` : `${82 + v}`
     return v < 8 ? `${40 + v}` : `${92 + v}`
   }
-  if (c !== null && typeof c === "object" && "ansi256" in c) return `${prefix};5;${(c as {ansi256: number}).ansi256}`
+  if (typeof c === "object" && c !== null && "ansi256" in c) {
+    return `${prefix};5;${(c as {ansi256: number}).ansi256}`
+  }
+
   return ""
 }
 
