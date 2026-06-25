@@ -151,20 +151,27 @@ export class Table {
 
     // Render header
     if (this.headers.length > 0) {
+      const colSep = this.border ? this.border.left : " │ "
       const headerLine = this.headers
         .map((cell, i) => {
           const padding = colWidths[i]! - getStringWidth(cell)
           return this.headerStyle.render(cell + " ".repeat(padding))
         })
-        .join(this.border ? this.border.left : " │ ")
+        .join(colSep)
 
       lines.push(headerLine)
 
+      // Render separator line between headers and rows
       if (this.border) {
-        const separator = this.border.topLeft
-          + this.border.top.repeat(colWidths.reduce((a, b) => a + b + 3, -1))
-          + this.border.topRight
+        const separator = this.headers
+          .map((_, i) => this.border!.top.repeat(colWidths[i]!))
+          .join(this.border.middle)
         lines.push(this.borderStyle.render(separator))
+      } else {
+        const separator = this.headers
+          .map((_, i) => "─".repeat(colWidths[i]!))
+          .join("─┼─")
+        lines.push("│" + separator + "│")
       }
     }
 
