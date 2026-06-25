@@ -74,24 +74,14 @@ export function colorToAnsi(color: Color, prefix: "38" | "48" | "58"): string {
   }
 
   if (typeof c === "string") {
-    if (c.startsWith("#")) {
-      const hex = c.slice(1)
-      if (hex.length === 3) {
-        const r = parseInt(hex[0]! + hex[0]!, 16)
-        const g = parseInt(hex[1]! + hex[1]!, 16)
-        const b = parseInt(hex[2]! + hex[2]!, 16)
-        return `${prefix};2;${r};${g};${b}`
+    // Bun.color handles hex strings, CSS names, rgb() strings
+    if (c.startsWith("#") || c.startsWith("rgb") || c.startsWith("hsl") || /^[a-z]+$/i.test(c)) {
+      const rgba = Bun.color(c, "[rgba]")
+      if (rgba) {
+        return `${prefix};2;${rgba[0]};${rgba[1]};${rgba[2]}`
       }
-      if (hex.length === 6) {
-        const r = parseInt(hex.slice(0, 2), 16)
-        const g = parseInt(hex.slice(2, 4), 16)
-        const b = parseInt(hex.slice(4, 6), 16)
-        return `${prefix};2;${r};${g};${b}`
-      }
-      const num = parseInt(hex, 16)
-      if (!isNaN(num)) return `${prefix};5;${num}`
-      return ""
     }
+    // Fallback: check named colors (4-bit ANSI)
     const namedColors: Record<string, number> = {
       black: 0, red: 1, green: 2, yellow: 3,
       blue: 4, magenta: 5, cyan: 6, white: 7,

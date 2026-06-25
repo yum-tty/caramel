@@ -23,13 +23,15 @@ function isWideChar(code: number): boolean {
   return false
 }
 
+// Bun-optimized ANSI string width using Intl.Segmenter for grapheme clusters
+const segmenter = new Intl.Segmenter("en", { grapheme: "visual" })
+
 export function getStringWidth(str: string): number {
+  // Strip ANSI escape codes first, then measure grapheme-aware width
+  const stripped = str.replace(/\x1b\[[0-9;]*m/g, "")
   let width = 0
-  let inEscape = false
-  for (const char of str) {
-    if (char === "\x1b") { inEscape = true; continue }
-    if (inEscape) { if (char === "m") inEscape = false; continue }
-    const code = char.codePointAt(0)!
+  for (const { segment } of segmenter.segment(stripped)) {
+    const code = segment.codePointAt(0)!
     width += isWideChar(code) ? 2 : 1
   }
   return width

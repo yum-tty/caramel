@@ -5,6 +5,12 @@ export interface RGBColor {
 }
 
 export function hexToRgb(hex: string): RGBColor {
+  // Use Bun.color for native hex parsing
+  const rgba = Bun.color(hex, "[rgba]")
+  if (rgba) {
+    return { r: rgba[0], g: rgba[1], b: rgba[2] }
+  }
+  // Fallback for edge cases
   const h = hex.replace("#", "")
   return {
     r: parseInt(h.slice(0, 2), 16),
