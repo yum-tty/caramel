@@ -19,7 +19,7 @@ import { type Position } from "./position"
 import { getStringWidth, stripAnsi } from "./ansi"
 import { Blend1D } from "./blending"
 
-export type TextAlign = "left" | "center" | "right"
+export type TextAlign = number | "left" | "center" | "right"
 
 export type UnderlineStyle = "none" | "single" | "double" | "curly" | "dotted" | "dashed"
 
@@ -460,8 +460,8 @@ export class Style {
     if (i._ul !== "none" && s._ul === "none") s._ul = i._ul
     if (i._width !== 0 && s._width === 0) s._width = i._width
     if (i._height !== 0 && s._height === 0) s._height = i._height
-    if (i._alignH !== "left" && s._alignH === "left") s._alignH = i._alignH
-    if (i._alignV !== "left" && s._alignV === "left") s._alignV = i._alignV
+    if (positionToNumber(i._alignH) !== 0 && positionToNumber(s._alignH) === 0) s._alignH = i._alignH
+    if (positionToNumber(i._alignV) !== 0 && positionToNumber(s._alignV) === 0) s._alignV = i._alignV
     if (i._borderStyle !== null && s._borderStyle === null) s._borderStyle = i._borderStyle
     if (i._maxWidth !== 0 && s._maxWidth === 0) s._maxWidth = i._maxWidth
     if (i._maxHeight !== 0 && s._maxHeight === 0) s._maxHeight = i._maxHeight
@@ -486,7 +486,7 @@ export class Style {
       this._width !== 0 || this._height !== 0 || this._maxWidth !== 0 || this._maxHeight !== 0 ||
       this._paddingTop !== 0 || this._paddingRight !== 0 || this._paddingBottom !== 0 || this._paddingLeft !== 0 ||
       this._marginTop !== 0 || this._marginRight !== 0 || this._marginBottom !== 0 || this._marginLeft !== 0 ||
-      this._borderStyle !== null || this._alignH !== "left" || this._alignV !== "left" || this._inline ||
+      this._borderStyle !== null || positionToNumber(this._alignH) !== 0 || positionToNumber(this._alignV) !== 0 || this._inline ||
       this._link !== ""
     if (!hasStyles) return this.maybeConvertTabs(str)
 
@@ -1101,21 +1101,28 @@ function wordWrapStr(str: string, maxWidth: number): string {
   return result.join("\n")
 }
 
+function positionToNumber(p: TextAlign): number {
+  if (typeof p === "number") return Math.min(1, Math.max(0, p))
+  switch (p) {
+    case "center": return 0.5
+    case "right": return 1
+    default: return 0
+  }
+}
+
 function alignTextHorizontal(str: string, align: TextAlign, width: number, whitespaceStyle: string = ""): string {
+  const pos = positionToNumber(align)
   const lines = str.split("\n")
   return lines.map((line) => {
     const vis = getStringWidth(line)
     if (width > 0 && vis < width) {
       const padding = width - vis
-      const pad = whitespaceStyle ? whitespaceStyle + " ".repeat(padding) + reset : " ".repeat(padding)
-      if (align === "center") {
-        const left = Math.floor(padding / 2)
-        const lPad = whitespaceStyle ? whitespaceStyle + " ".repeat(left) + reset : " ".repeat(left)
-        const rPad = whitespaceStyle ? whitespaceStyle + " ".repeat(padding - left) + reset : " ".repeat(padding - left)
-        return lPad + line + rPad
-      }
-      if (align === "right") return pad + line
-      return line + pad
+      const split = Math.round(padding * pos)
+      const leftPad = padding - split
+      const rightPad = split
+      const lPad = whitespaceStyle ? whitespaceStyle + " ".repeat(leftPad) + reset : " ".repeat(leftPad)
+      const rPad = whitespaceStyle ? whitespaceStyle + " ".repeat(rightPad) + reset : " ".repeat(rightPad)
+      return lPad + line + rPad
     }
     if (width > 0 && vis > width) return truncateStr(line, width)
     return line
@@ -1123,15 +1130,14 @@ function alignTextHorizontal(str: string, align: TextAlign, width: number, white
 }
 
 function alignTextVertical(str: string, align: TextAlign, height: number): string {
+  const pos = positionToNumber(align)
   const lines = str.split("\n")
   if (lines.length >= height) return str
   const diff = height - lines.length
-  if (align === "right") return "\n".repeat(diff) + str
-  if (align === "center") {
-    const top = Math.floor(diff / 2)
-    return "\n".repeat(top) + str + "\n".repeat(diff - top)
-  }
-  return str + "\n".repeat(diff)
+  const split = Math.round(diff * pos)
+  const topPad = diff - split
+  const bottomPad = split
+  return "\n".repeat(topPad) + str + "\n".repeat(bottomPad)
 }
 
 function truncateStr(str: string, maxWidth: number): string {
