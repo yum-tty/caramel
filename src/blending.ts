@@ -141,6 +141,17 @@ export function Blend2D(
   ...colors: string[]
 ): string[][] {
   const rgbColors = colors.map(hexToRgb)
+  if (width < 1) width = 1
+  if (height < 1) height = 1
+
+  angle = ((angle % 360) + 360) % 360
+
+  if (rgbColors.length === 0) return []
+  if (rgbColors.length === 1) {
+    const hex = rgbToHex(rgbColors[0]!)
+    return Array.from({ length: height }, () => Array(width).fill(hex) as string[])
+  }
+
   const maxDim = Math.max(width, height)
   const diagonalGradient = Blend1D(maxDim, ...colors)
 
@@ -156,13 +167,26 @@ export function Blend2D(
 
   for (let y = 0; y < height; y++) {
     const row: string[] = []
+    const dy = y - centerY
     for (let x = 0; x < width; x++) {
       const dx = x - centerX
-      const dy = y - centerY
       const rotX = dx * cosAngle - dy * sinAngle
       const gradientPos = Math.max(0, Math.min(1, (rotX + diagonalLength / 2) / diagonalLength))
-      const gradientIndex = Math.min(Math.floor(gradientPos * gradientLen), gradientLen)
-      row.push(diagonalGradient[gradientIndex]!)
+      const exactIndex = gradientPos * gradientLen
+      const lo = Math.min(Math.floor(exactIndex), gradientLen)
+      const hi = Math.min(lo + 1, gradientLen)
+      if (lo === hi) {
+        row.push(diagonalGradient[lo]!)
+      } else {
+        const frac = exactIndex - lo
+        const rgbLo = hexToRgb(diagonalGradient[lo]!)
+        const rgbHi = hexToRgb(diagonalGradient[hi]!)
+        row.push(rgbToHex({
+          r: lerp(rgbLo.r, rgbHi.r, frac),
+          g: lerp(rgbLo.g, rgbHi.g, frac),
+          b: lerp(rgbLo.b, rgbHi.b, frac),
+        }))
+      }
     }
     result.push(row)
   }
