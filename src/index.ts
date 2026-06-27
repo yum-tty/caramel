@@ -2,7 +2,14 @@
 
 // ── Core exports ──
 export { Style, NewStyle, NBSP, NoTabConversion } from "./style"
-export type { TextAlign as StylePosition, UnderlineStyle } from "./style"
+export type { TextAlign as StylePosition, UnderlineStyle as UnderlineStyleType } from "./style"
+export const UnderlineNone = "none" as const
+export const UnderlineSingle = "single" as const
+export const UnderlineDouble = "double" as const
+export const UnderlineCurly = "curly" as const
+export const UnderlineDotted = "dotted" as const
+export const UnderlineDashed = "dashed" as const
+export { getStringWidth, isWideChar, stripAnsi } from "./ansi"
 export { type Color, NoColor, Color as ColorFactory, LightDark, Complete, fg, bg, ulColor, reset, bold, dim, italic, underline, blink, reverse, strikethrough, colorToAnsi } from "./color"
 export type { CompleteColor, AdaptiveColor, LightDarkFunc, CompleteFunc, ColorProfile } from "./color"
 export { borders, getTopSize, getRightSize, getBottomSize, getLeftSize, type BorderStyle, type BorderType } from "./border"
@@ -12,20 +19,22 @@ export { JoinHorizontal, JoinVertical } from "./join"
 export { Wrap, Truncate, Ellipsize } from "./wrap"
 export { Whitespace, WithWhitespaceStyle, WithWhitespaceChars, Place, PlaceHorizontal, PlaceVertical } from "./whitespace"
 export type { WhitespaceOption } from "./whitespace"
-export { Table, CreateTable } from "./table"
+export { Table, CreateTable, HeaderRow, StringData as TableStringData, NewStringData as TableNewStringData, DataToMatrix as TableDataToMatrix, Filter as TableFilter, NewFilter as NewTableFilter } from "./table"
+export type { TableStyleFunc, DataInterface } from "./table"
 export { Canvas, ScreenBuffer } from "./canvas"
 export type { Cell, Drawable, Screen } from "./canvas"
 export { Layer, LayerHit, Compositor } from "./layer"
 export type { Rectangle } from "./layer"
 export { List, New, Alphabet, Arabic, Roman, Bullet, Asterisk, Dash } from "./list"
 export type { Items, Enumerator, ListIndenter } from "./list"
-export { Tree, Leaf, Root, NewStringData, DefaultEnumerator, RoundedEnumerator, DefaultIndenter, NodeChildren } from "./tree"
-export type { Node, Children, StyleFunc, TreeEnumerator, TreeIndenter, Indenter } from "./tree"
+export { Tree, Leaf, Root, NewStringData, DefaultEnumerator, RoundedEnumerator, DefaultIndenter, NodeChildren, Filter as TreeFilter, NewFilter as NewTreeFilter } from "./tree"
+export type { Node, Children, StyleFunc, TreeEnumerator, TreeIndenter } from "./tree"
 export { Blend1D, Blend2D, Alpha, Complementary, Darken, Lighten, isDarkColor } from "./blending"
 export { StyleRanges, NewRange, type Range } from "./ranges"
 export { StyleRunes } from "./runes"
 export { Writer, Writer_ } from "./writer"
 export { BackgroundColor, HasDarkBackground } from "./query"
+export { Width as SizeWidth, Height as SizeHeight, Size } from "./size"
 
 // ── Lipgloss-compatible re-exports ──
 export {
@@ -67,7 +76,6 @@ export {
   GetTransform, GetHyperlink, GetTabWidth,
   GetUnderlineStyle, GetUnderlineColor, GetUnderlineSpaces, GetStrikethroughSpaces,
   GetFrameSize, GetBorder, GetColorWhitespace,
-  StringData, DataToMatrix, NewFilter, Filter,
   DefaultStyles, NewWrapWriter, EnableLegacyWindowsANSI,
   NewCanvas, NewCompositor, NewLayer, NewLeaf,
 } from "./compat"

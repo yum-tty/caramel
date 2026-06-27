@@ -4,7 +4,7 @@
 import { Style, NewStyle } from "./style"
 import type { TextAlign as StylePosition, UnderlineStyle } from "./style"
 import type { Color as ColorType } from "./color"
-import { borders } from "./border"
+import { borders, type BorderStyle } from "./border"
 import type { BorderType } from "./border"
 import { Writer } from "./writer"
 
@@ -27,16 +27,16 @@ export const BrightCyan: ColorType = { ansi: 14 }
 export const BrightWhite: ColorType = { ansi: 15 }
 
 // ── Border functions (Go: func NormalBorder() Border) ──
-export function NormalBorder(): BorderType { return borders.normal }
-export function RoundedBorder(): BorderType { return borders.rounded }
-export function DoubleBorder(): BorderType { return borders.double }
-export function ThickBorder(): BorderType { return borders.thick }
-export function HiddenBorder(): BorderType { return borders.hidden }
-export function BlockBorder(): BorderType { return borders.block }
-export function InnerHalfBlockBorder(): BorderType { return borders.innerHalfBlock }
-export function OuterHalfBlockBorder(): BorderType { return borders.outerHalfBlock }
-export function MarkdownBorder(): BorderType { return borders.markdown }
-export function ASCIIBorder(): BorderType { return borders.ascii }
+export function NormalBorder(): BorderStyle | null { return borders.normal }
+export function RoundedBorder(): BorderStyle | null { return borders.rounded }
+export function DoubleBorder(): BorderStyle | null { return borders.double }
+export function ThickBorder(): BorderStyle | null { return borders.thick }
+export function HiddenBorder(): BorderStyle | null { return borders.hidden }
+export function BlockBorder(): BorderStyle | null { return borders.block }
+export function InnerHalfBlockBorder(): BorderStyle | null { return borders.innerHalfBlock }
+export function OuterHalfBlockBorder(): BorderStyle | null { return borders.outerHalfBlock }
+export function MarkdownBorder(): BorderStyle | null { return borders.markdown }
+export function ASCIIBorder(): BorderStyle | null { return borders.ascii }
 
 // ── Type exports ──
 export interface RGBColor { r: number; g: number; b: number }
@@ -71,6 +71,8 @@ export function Inline(v: boolean = true): Style { return _s().inline(v) }
 export function Transform(fn: (s: string) => string): Style { return _s().transform(fn) }
 export function Hyperlink(link: string, ...params: string[]): Style { return _s().hyperlink(link, ...params) }
 export function TabWidth(v: number): Style { return _s().tabWidth(v) }
+export function ColorWhitespace(v: boolean): Style { return _s().colorWhitespace(v) }
+export function BorderBackground(...c: ColorType[]): Style { return _s().borderBackground(...c) }
 
 // ── Standalone unsetters ──
 export function UnsetBold(): Style { return _s().unsetBold() }
@@ -97,6 +99,8 @@ export function UnsetHyperlink(): Style { return _s().unsetHyperlink() }
 export function UnsetTabWidth(): Style { return _s().unsetTabWidth() }
 export function UnsetString(): Style { return _s().unsetString() }
 export function UnsetColorWhitespace(): Style { return _s().unsetColorWhitespace() }
+export function UnsetBorderForegroundBlend(): Style { return _s().unsetBorderForegroundBlend() }
+export function UnsetBorderForegroundBlendOffset(): Style { return _s().unsetBorderForegroundBlendOffset() }
 
 // ── Standalone getters (Go: lipgloss.GetWidth(s)) ──
 export function GetWidth(s: Style): number { return s.getWidth() }
@@ -126,7 +130,7 @@ export function GetMarginBottom(s: Style): number { return s.getMarginBottom() }
 export function GetMarginLeft(s: Style): number { return s.getMarginLeft() }
 export function GetMarginChar(s: Style): string { return s.getMarginChar() }
 export function GetMarginBackground(s: Style): ColorType { return s.getMarginBackground() }
-export function GetBorderStyle(s: Style): BorderType | null { return s.getBorderStyle() }
+export function GetBorderStyle(s: Style): BorderType | null { return s.getBorderStyle() as any }
 export function GetBorderTop(s: Style): boolean { return s.getBorderTop() }
 export function GetBorderRight(s: Style): boolean { return s.getBorderRight() }
 export function GetBorderBottom(s: Style): boolean { return s.getBorderBottom() }
@@ -169,7 +173,7 @@ export function GetFrameSize(s: Style): [number, number] {
   return [s.getHorizontalFrameSize(), s.getVerticalFrameSize()]
 }
 export function GetBorder(s: Style): [BorderType | null, boolean, boolean, boolean, boolean] {
-  return [s.getBorderStyle(), s.getBorderTop(), s.getBorderRight(), s.getBorderBottom(), s.getBorderLeft()]
+  return [s.getBorderStyle() as any, s.getBorderTop(), s.getBorderRight(), s.getBorderBottom(), s.getBorderLeft()]
 }
 export function GetColorWhitespace(s: Style): boolean { return s.getColorWhitespace() }
 
@@ -187,8 +191,10 @@ export function Fprintf(w: { write(s: string): void }, format: string, ...args: 
 export function Fprintln(w: { write(s: string): void }, ...args: any[]): void { w.write(args.map(String).join(" ") + "\n") }
 
 // ── WrapWriter ──
-export interface WrapWriter { write(s: string): void; flush(): void }
-export function NewWrapWriter(): WrapWriter { let b = ""; return { write(s) { b += s }, flush() { process.stdout.write(b); b = "" } } }
+export { WrapWriter as WrapWriterImpl } from "./wrap"
+import { WrapWriter as WrapWriterImpl } from "./wrap"
+export interface WrapWriter { write(s: string): void; flush(): string; close(): string }
+export function NewWrapWriter(): WrapWriter { const w = new WrapWriterImpl(); return { write(s) { w.write(s) }, flush() { return w.flush() }, close() { return w.close() } } }
 
 // ── Table data ──
 export interface Data { rows(): string[][]; columns(): string[] }

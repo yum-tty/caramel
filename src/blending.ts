@@ -234,7 +234,7 @@ export function Complementary(color: string): string {
 
 export function Darken(color: string, percent: number): string {
   const rgb = hexToRgb(color)
-  const factor = 1 - Math.max(0, Math.min(1, percent / 100))
+  const factor = 1 - Math.max(0, Math.min(1, percent))
   return rgbToHex({
     r: Math.round(rgb.r * factor),
     g: Math.round(rgb.g * factor),
@@ -244,7 +244,7 @@ export function Darken(color: string, percent: number): string {
 
 export function Lighten(color: string, percent: number): string {
   const rgb = hexToRgb(color)
-  const add = 255 * Math.max(0, Math.min(1, percent / 100))
+  const add = 255 * Math.max(0, Math.min(1, percent))
   return rgbToHex({
     r: Math.round(Math.min(255, rgb.r + add)),
     g: Math.round(Math.min(255, rgb.g + add)),

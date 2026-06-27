@@ -89,6 +89,51 @@ export function NewStringData(...data: string[]): Children {
   return new NodeChildren(nodes)
 }
 
+// ── Filter ──
+
+export class Filter implements Children {
+  private data: Children
+  private _filter: ((index: number) => boolean) | null = null
+
+  constructor(data: Children) {
+    this.data = data
+  }
+
+  static New(data: Children): Filter {
+    return new Filter(data)
+  }
+
+  FilterFn(f: (index: number) => boolean): Filter {
+    this._filter = f
+    return this
+  }
+
+  at(index: number): Node | null {
+    if (!this._filter) return this.data.at(index)
+    let j = 0
+    for (let i = 0; i < this.data.length(); i++) {
+      if (this._filter(i)) {
+        if (j === index) return this.data.at(i)
+        j++
+      }
+    }
+    return null
+  }
+
+  length(): number {
+    if (!this._filter) return this.data.length()
+    let j = 0
+    for (let i = 0; i < this.data.length(); i++) {
+      if (this._filter(i)) j++
+    }
+    return j
+  }
+}
+
+export function NewFilter(data: Children): Filter {
+  return Filter.New(data)
+}
+
 /**
  * StyleFunc allows the tree to be styled per item.
  */
@@ -399,7 +444,7 @@ function renderNode(r: TreeRenderer, node: Node, root: boolean, prefix: string):
     }
 
     let item = itemStyle.render(child.value())
-    let multiLinePrefix = ""
+    let multiLinePrefix = prefix
 
     while (Height(item) > Height(nodePrefix)) {
       nodePrefix = joinVerticalLocal(nodePrefix, indent)

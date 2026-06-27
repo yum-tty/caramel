@@ -50,6 +50,11 @@ export const borders = {
     topRight: "┐",
     bottomLeft: "└",
     bottomRight: "┘",
+    middleLeft: "├",
+    middleRight: "┤",
+    middle: "┼",
+    middleTop: "┬",
+    middleBottom: "┴",
   } as BorderStyle,
 
   rounded: {
@@ -61,6 +66,11 @@ export const borders = {
     topRight: "╮",
     bottomLeft: "╰",
     bottomRight: "╯",
+    middleLeft: "├",
+    middleRight: "┤",
+    middle: "┼",
+    middleTop: "┬",
+    middleBottom: "┴",
   } as BorderStyle,
 
   thick: {
@@ -72,6 +82,11 @@ export const borders = {
     topRight: "┓",
     bottomLeft: "┗",
     bottomRight: "┛",
+    middleLeft: "┣",
+    middleRight: "┫",
+    middle: "╋",
+    middleTop: "┳",
+    middleBottom: "┻",
   } as BorderStyle,
 
   double: {
@@ -83,6 +98,11 @@ export const borders = {
     topRight: "╗",
     bottomLeft: "╚",
     bottomRight: "╝",
+    middleLeft: "╠",
+    middleRight: "╣",
+    middle: "╬",
+    middleTop: "╦",
+    middleBottom: "╩",
   } as BorderStyle,
 
   dot: {
@@ -94,6 +114,11 @@ export const borders = {
     topRight: "┐",
     bottomLeft: "└",
     bottomRight: "┘",
+    middleLeft: "├",
+    middleRight: "┤",
+    middle: "┼",
+    middleTop: "┬",
+    middleBottom: "┴",
   } as BorderStyle,
 
   dashed: {
@@ -105,6 +130,11 @@ export const borders = {
     topRight: "┐",
     bottomLeft: "└",
     bottomRight: "┘",
+    middleLeft: "├",
+    middleRight: "┤",
+    middle: "┼",
+    middleTop: "┬",
+    middleBottom: "┴",
   } as BorderStyle,
 
   block: {
@@ -154,17 +184,27 @@ export const borders = {
     topRight: " ",
     bottomLeft: " ",
     bottomRight: " ",
+    middleLeft: " ",
+    middleRight: " ",
+    middle: " ",
+    middleTop: " ",
+    middleBottom: " ",
   } as BorderStyle,
 
   markdown: {
-    top: "",
-    bottom: "",
-    left: ">",
-    right: "",
-    topLeft: "",
-    topRight: "",
-    bottomLeft: "",
-    bottomRight: "",
+    top: "-",
+    bottom: "-",
+    left: "|",
+    right: "|",
+    topLeft: "|",
+    topRight: "|",
+    bottomLeft: "|",
+    bottomRight: "|",
+    middleLeft: "|",
+    middleRight: "|",
+    middle: "|",
+    middleTop: "|",
+    middleBottom: "|",
   } as BorderStyle,
 
   ascii: {
@@ -176,6 +216,11 @@ export const borders = {
     topRight: "+",
     bottomLeft: "+",
     bottomRight: "+",
+    middleLeft: "+",
+    middleRight: "+",
+    middle: "+",
+    middleTop: "+",
+    middleBottom: "+",
   } as BorderStyle,
 } as const
 

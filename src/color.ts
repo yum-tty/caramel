@@ -21,6 +21,11 @@ export interface AdaptiveColor {
   Dark: string | CompleteColor
 }
 
+export interface CompleteAdaptiveColor {
+  Light: CompleteColor
+  Dark: CompleteColor
+}
+
 export type ColorProfile = "ansi" | "ansi256" | "truecolor" | "none"
 
 export function Color(s: string): Color {

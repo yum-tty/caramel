@@ -16,7 +16,7 @@ const wideCharRanges: [number, number][] = [
   [0x30000, 0x3FFFD],
 ]
 
-function isWideChar(code: number): boolean {
+export function isWideChar(code: number): boolean {
   for (const [lo, hi] of wideCharRanges) {
     if (code >= lo && code <= hi) return true
   }
@@ -24,7 +24,7 @@ function isWideChar(code: number): boolean {
 }
 
 // Bun-optimized ANSI string width using Intl.Segmenter for grapheme clusters
-const segmenter = new Intl.Segmenter("en", { grapheme: "visual" })
+const segmenter = new Intl.Segmenter("en", { granularity: "grapheme" })
 
 export function getStringWidth(str: string): number {
   // Strip ANSI escape codes first, then measure grapheme-aware width

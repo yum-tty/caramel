@@ -367,6 +367,33 @@ export class Style {
   borderBottomBackground(c: Color): Style { const s = this.clone(); s._borderBottomBgColor = c; return s }
   borderLeftBackground(c: Color): Style { const s = this.clone(); s._borderLeftBgColor = c; return s }
 
+  borderBackground(...c: Color[]): Style {
+    const s = this.clone()
+    if (c.length === 0) return s
+    if (c.length === 1) {
+      s._borderTopBgColor = c[0]!
+      s._borderRightBgColor = c[0]!
+      s._borderBottomBgColor = c[0]!
+      s._borderLeftBgColor = c[0]!
+    } else if (c.length === 2) {
+      s._borderTopBgColor = c[0]!
+      s._borderBottomBgColor = c[0]!
+      s._borderLeftBgColor = c[1]!
+      s._borderRightBgColor = c[1]!
+    } else if (c.length === 3) {
+      s._borderTopBgColor = c[0]!
+      s._borderLeftBgColor = c[1]!
+      s._borderRightBgColor = c[1]!
+      s._borderBottomBgColor = c[2]!
+    } else if (c.length >= 4) {
+      s._borderTopBgColor = c[0]!
+      s._borderRightBgColor = c[1]!
+      s._borderBottomBgColor = c[2]!
+      s._borderLeftBgColor = c[3]!
+    }
+    return s
+  }
+
   inline(v: boolean): Style {
     const s = this.clone()
     s._inline = v
@@ -391,6 +418,12 @@ export class Style {
   strikethroughSpaces(v: boolean): Style {
     const s = this.clone()
     s._strikethroughSpaces = v
+    return s
+  }
+
+  colorWhitespace(v: boolean): Style {
+    const s = this.clone()
+    s._colorWhitespace = v
     return s
   }
 
@@ -736,6 +769,8 @@ export class Style {
   unsetBorderRightBackground(): Style { const s = this.clone(); s._borderRightBgColor = null; return s }
   unsetBorderBottomBackground(): Style { const s = this.clone(); s._borderBottomBgColor = null; return s }
   unsetBorderLeftBackground(): Style { const s = this.clone(); s._borderLeftBgColor = null; return s }
+  unsetBorderForegroundBlend(): Style { const s = this.clone(); s._borderBlendFgColors = null; return s }
+  unsetBorderForegroundBlendOffset(): Style { const s = this.clone(); s._borderForegroundBlendOffset = 0; return s }
   unsetInline(): Style { const s = this.clone(); s._inline = false; return s }
   unsetMaxWidth(): Style { const s = this.clone(); s._maxWidth = 0; return s }
   unsetMaxHeight(): Style { const s = this.clone(); s._maxHeight = 0; return s }
