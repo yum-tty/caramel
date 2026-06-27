@@ -1080,23 +1080,112 @@ function getLines(s: string): [string[], number] {
   return [lines, widest]
 }
 
+const graphemeSegmenter = new Intl.Segmenter("en", { granularity: "grapheme" })
+
+function segmentGraphemes(str: string): string[] {
+  return [...graphemeSegmenter.segment(str)].map(s => s.segment)
+}
+
+function isBreakable(ch: string): boolean {
+  return ch === " " || ch === "\t" || ch === "\u00A0"
+}
+
+function isPunctuation(ch: string): boolean {
+  const code = ch.codePointAt(0) || 0
+  if (code >= 0x2000 && code <= 0x206F) return true
+  if (code >= 0x3000 && code <= 0x303F) return true
+  if (code >= 0xFF00 && code <= 0xFF0F) return true
+  if (code >= 0xFF1A && code <= 0xFF20) return true
+  if (code >= 0xFF3B && code <= 0xFF40) return true
+  if (code >= 0xFF5B && code <= 0xFF65) return true
+  if (".,;:!?-—)\\]}\"'".includes(ch)) return true
+  return false
+}
+
 function wordWrapStr(str: string, maxWidth: number): string {
   if (maxWidth <= 0) return str
   const lines = str.split("\n")
   const result: string[] = []
+
   for (const line of lines) {
     if (getStringWidth(line) <= maxWidth) { result.push(line); continue }
-    const words = line.split(" ")
+
+    const segments = segmentGraphemes(line)
     let currentLine = ""
-    for (const word of words) {
-      if (currentLine && getStringWidth(currentLine + " " + word) > maxWidth) {
-        result.push(currentLine)
-        currentLine = word
-      } else {
-        currentLine = currentLine ? currentLine + " " + word : word
+    let currentWidth = 0
+    let lastSpaceIdx = -1
+    let lastSpaceWidth = 0
+    let lastPunctIdx = -1
+    let lastPunctWidth = 0
+
+    for (let i = 0; i < segments.length; i++) {
+      const ch = segments[i]!
+      const chWidth = getStringWidth(ch)
+
+      if (isBreakable(ch)) {
+        if (currentWidth + chWidth > maxWidth && currentLine.length > 0) {
+          const breakIdx = lastPunctIdx >= 0 ? lastPunctIdx : lastSpaceIdx
+          const breakWidth = lastPunctIdx >= 0 ? lastPunctWidth : lastSpaceWidth
+
+          if (breakIdx >= 0 && breakWidth < currentWidth) {
+            const before = segments.slice(0, breakIdx + 1).join("")
+            const after = segments.slice(breakIdx + 1).join("")
+            result.push(before.trimEnd())
+            currentLine = after
+            currentWidth = getStringWidth(after)
+          } else {
+            result.push(currentLine)
+            currentLine = ch
+            currentWidth = chWidth
+          }
+          lastSpaceIdx = -1
+          lastSpaceWidth = 0
+          lastPunctIdx = -1
+          lastPunctWidth = 0
+          continue
+        }
+
+        currentLine += ch
+        currentWidth += chWidth
+        lastSpaceIdx = i
+        lastSpaceWidth = currentWidth
+        lastPunctIdx = -1
+        lastPunctWidth = 0
+        continue
       }
+
+      if (isPunctuation(ch)) {
+        lastPunctIdx = i
+        lastPunctWidth = currentWidth + chWidth
+      }
+
+      if (currentWidth + chWidth > maxWidth && currentLine.length > 0) {
+        const breakIdx = lastPunctIdx >= 0 ? lastPunctIdx : lastSpaceIdx
+        const breakWidth = lastPunctIdx >= 0 ? lastPunctWidth : lastSpaceWidth
+
+        if (breakIdx >= 0 && breakWidth < currentWidth) {
+          const before = segments.slice(0, breakIdx + 1).join("")
+          const after = segments.slice(breakIdx + 1).join("")
+          result.push(before.trimEnd())
+          currentLine = after
+          currentWidth = getStringWidth(after)
+        } else {
+          result.push(currentLine)
+          currentLine = ch
+          currentWidth = chWidth
+        }
+        lastSpaceIdx = -1
+        lastSpaceWidth = 0
+        lastPunctIdx = -1
+        lastPunctWidth = 0
+        continue
+      }
+
+      currentLine += ch
+      currentWidth += chWidth
     }
-    if (currentLine) result.push(currentLine)
+
+    if (currentLine.length > 0) result.push(currentLine)
   }
   return result.join("\n")
 }
