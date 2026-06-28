@@ -251,10 +251,11 @@ export class Tree implements Node {
       end = tmp
     }
     if (start < 0) start = 0
-    if (end < 0 || end > this.childNodes.length()) {
-      end = this.childNodes.length()
+    const len = this.childNodes.length()
+    if (end < 0 || end > len) {
+      end = len
     }
-    this._offset = [start, end]
+    this._offset = [start, len - end]
     return this
   }
 
@@ -367,7 +368,9 @@ export class Tree implements Node {
 
   children(): Children {
     const data: Node[] = []
-    for (let i = this._offset[0]; i < Math.min(this._offset[1], this.childNodes.length()); i++) {
+    const len = this.childNodes.length()
+    const end = len - this._offset[1]
+    for (let i = this._offset[0]; i < end; i++) {
       const node = this.childNodes.at(i)
       if (node) data.push(node)
     }
