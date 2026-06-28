@@ -227,6 +227,9 @@ export { Compositor as NewCompositor } from "./layer"
 export { Layer as NewLayer } from "./layer"
 export { Leaf as NewLeaf } from "./tree"
 
+// ── Render convenience ──
+export function Render(text: string, style: Style): string { return style.render(text) }
+
 // ── Misc ──
 export function DefaultStyles() { return { border: new Style(), bullet: new Style(), enumerator: new Style() } }
 export function EnableLegacyWindowsANSI(): void {}

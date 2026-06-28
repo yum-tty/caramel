@@ -78,6 +78,7 @@ export {
   GetFrameSize, GetBorder, GetColorWhitespace,
   DefaultStyles, NewWrapWriter, EnableLegacyWindowsANSI,
   NewCanvas, NewCompositor, NewLayer, NewLeaf,
+  Render,
 } from "./compat"
 
 export type { RGBColor, ANSIColor, WrapWriter, Data, FilterFunc } from "./compat"
