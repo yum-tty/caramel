@@ -111,7 +111,8 @@ function downsampleSgr(seq: string, profile: ColorProfile): string {
   const params = seq.slice(2, -1).split(";")
   const out: string[] = []
 
-  for (const p of params) {
+  for (let i = 0; i < params.length; i++) {
+    const p = params[i]!
     const n = parseInt(p, 10)
     if (isNaN(n)) { out.push(p); continue }
 
@@ -140,11 +141,10 @@ function downsampleSgr(seq: string, profile: ColorProfile): string {
     }
 
     if (n === 38 || n === 48 || n === 58) {
-      const idx = params.indexOf(p)
-      const next1 = params[idx + 1]
-      const next2 = params[idx + 2]
-      const next3 = params[idx + 3]
-      const next4 = params[idx + 4]
+      const next1 = params[i + 1]
+      const next2 = params[i + 2]
+      const next3 = params[i + 3]
+      const next4 = params[i + 4]
       const sub = parseInt(next1, 10)
 
       if (sub === 2 && next2 !== undefined && next3 !== undefined && next4 !== undefined) {

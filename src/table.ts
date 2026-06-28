@@ -49,6 +49,7 @@ export class StringData implements DataInterface {
   }
 
   At(row: number, cell: number): string {
+    if (row < 0 || cell < 0) return ""
     if (row >= this._rows.length || cell >= this._rows[row]!.length) return ""
     return this._rows[row]![cell]!
   }
@@ -478,7 +479,7 @@ export class Table {
 
   private constructHeaders(): string {
     const cells: string[] = []
-    const height = this.heights[0]!
+    const height = this.heights[0] ?? 1
 
     const left = this.borderStyle.render(this.border.left) + "\n"
 
@@ -539,7 +540,7 @@ export class Table {
 
     let height: number
     if (!isOverflow) {
-      height = this.heights[index + btoi(hasHeaders)]!
+      height = this.heights[index + btoi(hasHeaders)] ?? 1
     } else {
       height = this.overflowHeight
     }
@@ -605,8 +606,8 @@ export class Table {
 
   private truncateCell(cell: string, rowIndex: number, colIndex: number): string {
     const hasHeaders = this.headers.length > 0
-    let height = this.heights[rowIndex + btoi(hasHeaders)]!
-    const cellWidth = this.widths[colIndex]!
+    let height = this.heights[rowIndex + btoi(hasHeaders)] ?? 1
+    const cellWidth = this.widths[colIndex] ?? 0
     const cellStyle = this.style(rowIndex, colIndex)
 
     if (rowIndex === HeaderRow) {

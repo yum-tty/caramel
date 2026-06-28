@@ -193,7 +193,7 @@ export function Sprint(...args: any[]): string { return _writer.sprint(...args) 
 export function Sprintf(format: string, ...args: any[]): string { return _writer.sprintf(format, ...args) }
 export function Sprintln(...args: any[]): string { return _writer.sprintln(...args) }
 export function Fprint(w: { write(s: string): void }, ...args: any[]): void { w.write(args.map(String).join("")) }
-export function Fprintf(w: { write(s: string): void }, format: string, ...args: any[]): void { let i = 0; w.write(format.replace(/%s/g, () => String(args[i++]))) }
+export function Fprintf(w: { write(s: string): void }, format: string, ...args: any[]): void { let i = 0; w.write(format.replace(/%s/g, () => i < args.length ? String(args[i++]) : "%s")) }
 export function Fprintln(w: { write(s: string): void }, ...args: any[]): void { w.write(args.map(String).join(" ") + "\n") }
 
 // ── WrapWriter ──

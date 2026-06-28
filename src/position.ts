@@ -17,6 +17,6 @@ export const Right: Position = 1.0
  * Clamp a position value between 0 and 1.
  */
 export function positionValue(p: Position): number {
-  return Math.min(1, Math.max(0, p))
+  return Number.isFinite(p) ? Math.min(1, Math.max(0, p)) : 0
 }
 

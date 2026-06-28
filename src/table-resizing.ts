@@ -136,6 +136,7 @@ export class Resizer {
         }
       }
 
+      if (shorterColumnWidth === Number.MAX_SAFE_INTEGER) break
       colWidths[shorterColumnIndex]!++
     }
 
@@ -191,7 +192,7 @@ export class Resizer {
           }
         }
 
-        if (biggestDiffToMedianIndex <= 0 || colWidths[biggestDiffToMedianIndex] === 0) break
+        if (biggestDiffToMedianIndex < 0 || colWidths[biggestDiffToMedianIndex] === 0) break
         colWidths[biggestDiffToMedianIndex]!--
       }
     }

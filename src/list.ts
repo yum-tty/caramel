@@ -24,6 +24,7 @@ export type ListIndenter = (items: Items, index: number) => string
 const ABC_LEN = 26
 
 export function Alphabet(_items: Items, i: number): string {
+  if (i < 0) return "?"
   if (i >= ABC_LEN * ABC_LEN + ABC_LEN) {
     return `${String.fromCharCode(65 + Math.floor(i / ABC_LEN / ABC_LEN) - 1)}${String.fromCharCode(65 + Math.floor(i / ABC_LEN) % ABC_LEN - 1)}${String.fromCharCode(65 + (i % ABC_LEN))}.`
   }
