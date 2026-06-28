@@ -101,6 +101,10 @@ export function UnsetString(): Style { return _s().unsetString() }
 export function UnsetColorWhitespace(): Style { return _s().unsetColorWhitespace() }
 export function UnsetBorderForegroundBlend(): Style { return _s().unsetBorderForegroundBlend() }
 export function UnsetBorderForegroundBlendOffset(): Style { return _s().unsetBorderForegroundBlendOffset() }
+export function UnsetBorderTopBackground(): Style { return _s().unsetBorderTopBackground() }
+export function UnsetBorderRightBackground(): Style { return _s().unsetBorderRightBackground() }
+export function UnsetBorderBottomBackground(): Style { return _s().unsetBorderBottomBackground() }
+export function UnsetBorderLeftBackground(): Style { return _s().unsetBorderLeftBackground() }
 
 // ── Standalone getters (Go: lipgloss.GetWidth(s)) ──
 export function GetWidth(s: Style): number { return s.getWidth() }
@@ -145,6 +149,8 @@ export function GetBorderBottomBackground(s: Style): ColorType { return s.getBor
 export function GetBorderLeftBackground(s: Style): ColorType { return s.getBorderLeftBackground() }
 export function GetBorderForegroundBlend(s: Style): ColorType[] | null { return s.getBorderForegroundBlend() }
 export function GetBorderForegroundBlendOffset(s: Style): number { return s.getBorderForegroundBlendOffset() }
+/** @deprecated Use GetBorderTopSize instead */
+export function GetBorderTopWidth(s: Style): number { return s.getBorderTopSize() }
 export function GetBorderTopSize(s: Style): number { return s.getBorderTopSize() }
 export function GetBorderRightSize(s: Style): number { return s.getBorderRightSize() }
 export function GetBorderBottomSize(s: Style): number { return s.getBorderBottomSize() }
@@ -210,6 +216,10 @@ export function DataToMatrix(data: Data): string[][] { return data.rows() }
 export type FilterFunc = (row: string[]) => boolean
 export function NewFilter(fn: FilterFunc): FilterFunc { return fn }
 export function Filter(rows: string[][], fn: FilterFunc): string[][] { return rows.filter(fn) }
+
+// ── Deprecated aliases ──
+/** @deprecated Use UnsetBorderTopBackground instead */
+export function UnsetBorderTopBackgroundColor(): Style { return _s().unsetBorderTopBackground() }
 
 // ── Aliases for Go API names ──
 export { Canvas as NewCanvas } from "./canvas"
