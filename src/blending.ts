@@ -102,8 +102,8 @@ function blendLab(a: RGBColor, b: RGBColor, t: number): RGBColor {
 
 export function Blend1D(steps: number, ...colors: string[]): string[] {
   if (colors.length === 0) return []
-  if (colors.length === 1) return Array(steps).fill(colors[0])
   if (steps <= 0) return []
+  if (colors.length === 1) return Array(steps).fill(colors[0])
 
   const rgbColors = colors.map(hexToRgb)
 

@@ -1236,7 +1236,7 @@ function truncateStr(str: string, maxWidth: number): string {
   let inEscape = false
   for (const char of str) {
     if (char === "\x1b") { inEscape = true; result += char; continue }
-    if (inEscape) { result += char; if (char === "m") inEscape = false; continue }
+    if (inEscape) { result += char; if (char === "m" || char === "\x07") inEscape = false; continue }
     if (count >= maxWidth - 1) { result += "\u2026"; break }
     const charWidth = isWideChar(char.codePointAt(0) || 0) ? 2 : 1
     result += char

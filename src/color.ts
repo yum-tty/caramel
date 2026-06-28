@@ -99,7 +99,7 @@ export function colorToAnsi(color: Color, prefix: "38" | "48" | "58"): string {
       if (prefix === "38") return i < 8 ? `${30 + i}` : `${82 + i}`
       return i < 8 ? `${40 + i}` : `${92 + i}`
     }
-    return `${prefix};5;${c}`
+    return `${prefix};5;${i}`
   }
 
   // Bun.color can't handle {ansi:N} or {ansi256:N} — manual handling
@@ -126,10 +126,12 @@ export const reverse = "\x1b[7m"
 export const strikethrough = "\x1b[9m"
 
 export function fg(color: Color): string {
+  if (color == null) return ""
   return `\x1b[${colorToAnsi(color, "38")}m`
 }
 
 export function bg(color: Color): string {
+  if (color == null) return ""
   return `\x1b[${colorToAnsi(color, "48")}m`
 }
 

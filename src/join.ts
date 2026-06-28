@@ -63,7 +63,7 @@ export function JoinHorizontal(pos: Position, ...strs: string[]): string {
     let line = ""
     for (let j = 0; j < blocks.length; j++) {
       const blockLine = blocks[j]![i] || ""
-      const padding = " ".repeat(maxWidths[j]! - getStringWidth(blockLine))
+      const padding = " ".repeat(Math.max(0, maxWidths[j]! - getStringWidth(blockLine)))
       const hasAnsi = blockLine.includes("\x1b[")
       line += blockLine + (hasAnsi ? "\x1b[0m" : "") + padding
     }
