@@ -43,7 +43,7 @@ export function Roman(_items: Items, i: number): string {
   let result = ""
   let n = i
   for (let v = 0; v < arabic.length; v++) {
-    while (n >= arabic[v]! - 1) {
+    while (n >= arabic[v]!) {
       n -= arabic[v]!
       result += roman[v]
     }

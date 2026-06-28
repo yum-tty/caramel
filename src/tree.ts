@@ -367,7 +367,7 @@ export class Tree implements Node {
 
   children(): Children {
     const data: Node[] = []
-    for (let i = this._offset[0]; i < this.childNodes.length() - this._offset[1]; i++) {
+    for (let i = this._offset[0]; i < Math.min(this._offset[1], this.childNodes.length()); i++) {
       const node = this.childNodes.at(i)
       if (node) data.push(node)
     }

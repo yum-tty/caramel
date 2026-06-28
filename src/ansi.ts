@@ -28,7 +28,7 @@ const segmenter = new Intl.Segmenter("en", { granularity: "grapheme" })
 
 export function getStringWidth(str: string): number {
   // Strip ANSI escape codes first, then measure grapheme-aware width
-  const stripped = str.replace(/\x1b\[[0-9;]*m/g, "")
+  const stripped = str.replace(/\x1b\[[0-9;]*m/g, "").replace(/\x1b\]([^\x07\x1b\\]*)(?:\x07|\x1b\\)/g, "")
   let width = 0
   for (const { segment } of segmenter.segment(stripped)) {
     const code = segment.codePointAt(0)!
@@ -38,5 +38,5 @@ export function getStringWidth(str: string): number {
 }
 
 export function stripAnsi(str: string): string {
-  return str.replace(/\x1b\[[0-9;]*m/g, "")
+  return str.replace(/\x1b\[[0-9;]*m/g, "").replace(/\x1b\]([^\x07\x1b\\]*)(?:\x07|\x1b\\)/g, "")
 }

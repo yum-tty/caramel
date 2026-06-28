@@ -252,8 +252,9 @@ export function Truncate(str: string, maxWidth: number, tail: string = "\u2026")
         break
       }
 
+      const charWidth = isWideChar(char.codePointAt(0) || 0) ? 2 : 1
       truncated += char
-      currentWidth++
+      currentWidth += charWidth
     }
 
     result.push(truncated)

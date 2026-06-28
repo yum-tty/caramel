@@ -2,20 +2,7 @@
 
 import type { Position } from "./position"
 import { positionValue } from "./position"
-
-/**
- * Strip ANSI escape codes from a string.
- */
-function stripAnsi(str: string): string {
-  return str.replace(/\x1b\[[0-9;]*m/g, "")
-}
-
-/**
- * Get visible width of a string (without ANSI codes).
- */
-function visibleWidth(str: string): number {
-  return stripAnsi(str).length
-}
+import { getStringWidth } from "./ansi"
 
 /**
  * Split a string into lines and return max width.
@@ -24,7 +11,7 @@ function getLines(str: string): [string[], number] {
   const lines = str.split("\n")
   let maxWidth = 0
   for (const line of lines) {
-    const w = visibleWidth(line)
+    const w = getStringWidth(line)
     if (w > maxWidth) maxWidth = w
   }
   return [lines, maxWidth]
@@ -76,7 +63,7 @@ export function JoinHorizontal(pos: Position, ...strs: string[]): string {
     let line = ""
     for (let j = 0; j < blocks.length; j++) {
       const blockLine = blocks[j]![i] || ""
-      const padding = " ".repeat(maxWidths[j]! - visibleWidth(blockLine))
+      const padding = " ".repeat(maxWidths[j]! - getStringWidth(blockLine))
       const hasAnsi = blockLine.includes("\x1b[")
       line += blockLine + (hasAnsi ? "\x1b[0m" : "") + padding
     }
@@ -108,7 +95,7 @@ export function JoinVertical(pos: Position, ...strs: string[]): string {
 
   for (const block of blocks) {
     for (const line of block) {
-      const w = maxWidth - visibleWidth(line)
+      const w = maxWidth - getStringWidth(line)
       const hasAnsi = line.includes("\x1b[")
 
       if (pos === 0) {

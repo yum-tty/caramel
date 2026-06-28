@@ -16,7 +16,7 @@ import {
 } from "./color"
 import { type BorderStyle, borders, type BorderType, getTopSize, getRightSize, getBottomSize, getLeftSize } from "./border"
 import { type Position } from "./position"
-import { getStringWidth, stripAnsi } from "./ansi"
+import { getStringWidth, stripAnsi, isWideChar } from "./ansi"
 import { Blend1D } from "./blending"
 
 export type TextAlign = number | "left" | "center" | "right"
@@ -1035,7 +1035,7 @@ function getFirstRune(str: string): string {
 function renderHorizontalEdge(left: string, middle: string, right: string, width: number): string {
   const leftWidth = getStringWidth(left)
   const rightWidth = getStringWidth(right)
-  const middleRunes = [...middle]
+  const middleRunes = middle.length === 0 ? [" "] : [...middle]
   let out = left
   let j = 0
   for (let i = 0; i < width - leftWidth - rightWidth;) {
@@ -1238,8 +1238,9 @@ function truncateStr(str: string, maxWidth: number): string {
     if (char === "\x1b") { inEscape = true; result += char; continue }
     if (inEscape) { result += char; if (char === "m") inEscape = false; continue }
     if (count >= maxWidth - 1) { result += "\u2026"; break }
+    const charWidth = isWideChar(char.codePointAt(0) || 0) ? 2 : 1
     result += char
-    count++
+    count += charWidth
   }
   return result
 }
