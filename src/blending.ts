@@ -278,6 +278,6 @@ export function Lighten(color: string, percent: number): string {
 
 export function isDarkColor(color: string): boolean {
   const rgb = hexToRgb(color)
-  const luminance = (0.299 * rgb.r + 0.587 * rgb.g + 0.114 * rgb.b) / 255
+  const luminance = (0.2126 * rgb.r + 0.7152 * rgb.g + 0.0722 * rgb.b) / 255
   return luminance < 0.5
 }

@@ -470,6 +470,8 @@ export class Style {
     if (i._link !== "" && s._link === "") s._link = i._link
     if (i._linkParams !== "" && s._linkParams === "") s._linkParams = i._linkParams
     s._attrs |= (i._attrs & ~s._attrs)
+    // Margins and padding are not inherited
+    // Background color inherits to margin background when neither has it set
     if (i._bgColor !== null && s._marginBg === null && i._marginBg === null) {
       s._marginBg = i._bgColor
     }
