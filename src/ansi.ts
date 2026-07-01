@@ -1,7 +1,6 @@
 const wideCharRanges: [number, number][] = [
   [0x1100, 0x115F],
   [0x2329, 0x232A],
-  [0x2800, 0x28FF],
   [0x2E80, 0x303E],
   [0x3040, 0x33BF],
   [0x3400, 0x4DBF],
@@ -25,20 +24,12 @@ export function isWideChar(code: number): boolean {
   return false
 }
 
-// Bun-optimized ANSI string width using Intl.Segmenter for grapheme clusters
-const segmenter = new Intl.Segmenter("en", { granularity: "grapheme" })
-
+// Delegates to Bun.stringWidth which handles ANSI escapes and grapheme clusters natively.
+// Note: Braille (0x2800-0x28FF) removed from wideCharRanges — Bun correctly reports width 1.
 export function getStringWidth(str: string): number {
-  // Strip ANSI escape codes first, then measure grapheme-aware width
-  const stripped = str.replace(/\x1b\[[0-9;]*m/g, "").replace(/\x1b\]([^\x07\x1b\\]*)(?:\x07|\x1b\\)/g, "")
-  let width = 0
-  for (const { segment } of segmenter.segment(stripped)) {
-    const code = segment.codePointAt(0)!
-    width += isWideChar(code) ? 2 : 1
-  }
-  return width
+  return Bun.stringWidth(str)
 }
 
 export function stripAnsi(str: string): string {
-  return str.replace(/\x1b\[[0-9;]*m/g, "").replace(/\x1b\]([^\x07\x1b\\]*)(?:\x07|\x1b\\)/g, "")
+  return Bun.stripANSI(str)
 }

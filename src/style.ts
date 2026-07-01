@@ -16,7 +16,7 @@ import {
 } from "./color"
 import { type BorderStyle, borders, type BorderType, getTopSize, getRightSize, getBottomSize, getLeftSize } from "./border"
 import { type Position } from "./position"
-import { getStringWidth, stripAnsi, isWideChar } from "./ansi"
+import { getStringWidth } from "./ansi"
 import { Blend1D } from "./blending"
 
 export type TextAlign = number | "left" | "center" | "right"
@@ -1233,18 +1233,8 @@ function alignTextVertical(str: string, align: TextAlign, height: number): strin
 
 function truncateStr(str: string, maxWidth: number): string {
   if (getStringWidth(str) <= maxWidth) return str
-  let result = ""
-  let count = 0
-  let inEscape = false
-  for (const char of str) {
-    if (char === "\x1b") { inEscape = true; result += char; continue }
-    if (inEscape) { result += char; if (char === "m" || char === "\x07") inEscape = false; continue }
-    if (count >= maxWidth - 1) { result += "\u2026"; break }
-    const charWidth = isWideChar(char.codePointAt(0) || 0) ? 2 : 1
-    result += char
-    count += charWidth
-  }
-  return result
+  const truncated = Bun.sliceAnsi(str, 0, maxWidth - 1)
+  return truncated + "\u2026"
 }
 
 function padStr(str: string, n: number, char: string, style: string = ""): string {

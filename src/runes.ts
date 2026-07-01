@@ -51,6 +51,8 @@ function styleToString(style: any): string {
 }
 
 function hexToRgb(hex: string): string {
+  const rgba = Bun.color(hex, "[rgba]")
+  if (rgba) return `${rgba[0]};${rgba[1]};${rgba[2]}`
   const h = hex.replace("#", "")
   const r = parseInt(h.slice(0, 2), 16)
   const g = parseInt(h.slice(2, 4), 16)
