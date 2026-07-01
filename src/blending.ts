@@ -195,13 +195,13 @@ export function Blend2D(
 }
 
 export function Alpha(color: string, alpha: number): string {
+  const rgba = Bun.color(color, "[rgba]")
+  if (rgba) {
+    return rgbToHex({ r: rgba[0], g: rgba[1], b: rgba[2] })
+  }
   const rgb = hexToRgb(color)
   const a = Math.max(0, Math.min(1, alpha))
-  return rgbToHex({
-    r: Math.round(rgb.r * a),
-    g: Math.round(rgb.g * a),
-    b: Math.round(rgb.b * a),
-  })
+  return `rgba(${rgb.r},${rgb.g},${rgb.b},${a})`
 }
 
 function rgbToHsv(r: number, g: number, b: number): [number, number, number] {

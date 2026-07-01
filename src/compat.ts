@@ -105,6 +105,30 @@ export function UnsetBorderTopBackground(): Style { return _s().unsetBorderTopBa
 export function UnsetBorderRightBackground(): Style { return _s().unsetBorderRightBackground() }
 export function UnsetBorderBottomBackground(): Style { return _s().unsetBorderBottomBackground() }
 export function UnsetBorderLeftBackground(): Style { return _s().unsetBorderLeftBackground() }
+export function UnsetAlignHorizontal(): Style { return _s().unsetAlignHorizontal() }
+export function UnsetAlignVertical(): Style { return _s().unsetAlignVertical() }
+export function UnsetPaddingChar(): Style { return _s().unsetPaddingChar() }
+export function UnsetPaddingLeft(): Style { return _s().unsetPaddingLeft() }
+export function UnsetPaddingRight(): Style { return _s().unsetPaddingRight() }
+export function UnsetPaddingTop(): Style { return _s().unsetPaddingTop() }
+export function UnsetPaddingBottom(): Style { return _s().unsetPaddingBottom() }
+export function UnsetMarginLeft(): Style { return _s().unsetMarginLeft() }
+export function UnsetMarginRight(): Style { return _s().unsetMarginRight() }
+export function UnsetMarginTop(): Style { return _s().unsetMarginTop() }
+export function UnsetMarginBottom(): Style { return _s().unsetMarginBottom() }
+export function UnsetMarginBackground(): Style { return _s().unsetMarginBackground() }
+export function UnsetBorderTop(): Style { return _s().unsetBorderTop() }
+export function UnsetBorderRight(): Style { return _s().unsetBorderRight() }
+export function UnsetBorderBottom(): Style { return _s().unsetBorderBottom() }
+export function UnsetBorderLeft(): Style { return _s().unsetBorderLeft() }
+export function UnsetBorderForeground(): Style { return _s().unsetBorderForeground() }
+export function UnsetBorderTopForeground(): Style { return _s().unsetBorderTopForeground() }
+export function UnsetBorderRightForeground(): Style { return _s().unsetBorderRightForeground() }
+export function UnsetBorderBottomForeground(): Style { return _s().unsetBorderBottomForeground() }
+export function UnsetBorderLeftForeground(): Style { return _s().unsetBorderLeftForeground() }
+export function UnsetBorderBackground(): Style { return _s().unsetBorderBackground() }
+export function UnsetUnderlineSpaces(): Style { return _s().unsetUnderlineSpaces() }
+export function UnsetStrikethroughSpaces(): Style { return _s().unsetStrikethroughSpaces() }
 
 // ── Standalone getters (Go: lipgloss.GetWidth(s)) ──
 export function GetWidth(s: Style): number { return s.getWidth() }
