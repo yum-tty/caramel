@@ -19,7 +19,7 @@ bun add github:yum-tty/caramel
 Or install from a specific package:
 
 ```bash
-bun add caramel
+bun add @yum-tty/caramel
 ```
 
 ## Quick Start
