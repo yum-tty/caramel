@@ -27,7 +27,7 @@ function tokenizeAnsi(s: string): AnsiToken[] {
         tokens.push({ text: s.slice(i, j), isEscape: true })
         i = j
       } else {
-        tokens.push({ text: s[i], isEscape: false })
+        tokens.push({ text: s[i]!, isEscape: false })
         i++
       }
     } else {
@@ -140,12 +140,12 @@ export class WrapWriter {
           const seq = s.slice(i, j)
           const oscMatch = seq.match(/^\x1b\]8;([^;]*);([^\x07\x1b\\]*)/)
           if (oscMatch) {
-            if (oscMatch[2] === "") {
+            if (oscMatch[2]! === "") {
               this.linkUrl = ""
               this.linkParams = ""
             } else {
-              this.linkParams = oscMatch[1]
-              this.linkUrl = oscMatch[2]
+              this.linkParams = oscMatch[1]!
+              this.linkUrl = oscMatch[2]!
             }
           }
           i = j - 1

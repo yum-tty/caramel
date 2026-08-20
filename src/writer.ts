@@ -149,7 +149,7 @@ function downsampleSgr(seq: string, profile: ColorProfile): string {
     }
 
     if (n === 38 || n === 48 || n === 58) {
-      const next1 = params[i + 1]
+      const next1 = params[i + 1]!
       const next2 = params[i + 2]
       const next3 = params[i + 3]
       const next4 = params[i + 4]

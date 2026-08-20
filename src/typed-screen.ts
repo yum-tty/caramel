@@ -53,14 +53,14 @@ export class TypedScreenBuffer implements Screen {
     if (x < 0 || x >= this.w || y < 0 || y >= this.h) return null
 
     const i = this.idx(x, y)
-    const code = this.charCodes[i]
+    const code = this.charCodes[i]!
 
     if (code === 0) return null
 
     const char = String.fromCodePoint(code)
-    const style = getStyleString(this.styleIndices[i])
+    const style = getStyleString(this.styleIndices[i]!)
 
-    return { char, width: this.charWidths[i], style }
+    return { char, width: this.charWidths[i]!, style }
   }
 
   setCell(x: number, y: number, cell: Cell): void {
@@ -100,9 +100,9 @@ export class TypedScreenBuffer implements Screen {
       for (let x = 0; x < Math.min(width, this.w); x++) {
         const oldIdx = this.idx(x, y)
         const newIdx = y * width + x
-        newCharCodes[newIdx] = this.charCodes[oldIdx]
-        newCharWidths[newIdx] = this.charWidths[oldIdx]
-        newStyleIndices[newIdx] = this.styleIndices[oldIdx]
+        newCharCodes[newIdx] = this.charCodes[oldIdx]!
+        newCharWidths[newIdx] = this.charWidths[oldIdx]!
+        newStyleIndices[newIdx] = this.styleIndices[oldIdx]!
       }
     }
 
@@ -129,11 +129,11 @@ export class TypedScreenBuffer implements Screen {
     for (let y = 0; y < this.h; y++) {
       for (let x = 0; x < this.w; x++) {
         const i = this.idx(x, y)
-        const code = this.charCodes[i]
+        const code = this.charCodes[i]!
         if (code !== 0) {
           const char = String.fromCodePoint(code)
-          const style = getStyleString(this.styleIndices[i])
-          scr.setCell(ox + x, oy + y, { char, width: this.charWidths[i], style })
+          const style = getStyleString(this.styleIndices[i]!)
+          scr.setCell(ox + x, oy + y, { char, width: this.charWidths[i]!, style })
         }
       }
     }
@@ -145,8 +145,8 @@ export class TypedScreenBuffer implements Screen {
       let line = ""
       for (let x = 0; x < this.w; x++) {
         const i = this.idx(x, y)
-        const code = this.charCodes[i]
-        const style = getStyleString(this.styleIndices[i])
+        const code = this.charCodes[i]!
+        const style = getStyleString(this.styleIndices[i]!)
 
         if (style) line += style
         line += String.fromCodePoint(code)

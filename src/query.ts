@@ -9,9 +9,9 @@ function parseRgbHex(raw: string): string | null {
     /rgb:([0-9a-f]{2,4})\/([0-9a-f]{2,4})\/([0-9a-f]{2,4})/i
   )
   if (!match) return null
-  const r = match[1].length > 2 ? match[1].slice(0, 2) : match[1].padEnd(2, "0")
-  const g = match[2].length > 2 ? match[2].slice(0, 2) : match[2].padEnd(2, "0")
-  const b = match[3].length > 2 ? match[3].slice(0, 2) : match[3].padEnd(2, "0")
+  const r = match[1]!.length > 2 ? match[1]!.slice(0, 2) : match[1]!.padEnd(2, "0")
+  const g = match[2]!.length > 2 ? match[2]!.slice(0, 2) : match[2]!.padEnd(2, "0")
+  const b = match[3]!.length > 2 ? match[3]!.slice(0, 2) : match[3]!.padEnd(2, "0")
   return `#${r}${g}${b}`
 }
 

@@ -46,7 +46,7 @@ export class ScreenBuffer implements Screen {
 
   cellAt(x: number, y: number): Cell | null {
     if (x < 0 || x >= this.w || y < 0 || y >= this.h) return null
-    return this.cells[y]![x]
+    return this.cells[y]![x]!
   }
 
   setCell(x: number, y: number, cell: Cell): void {
@@ -63,7 +63,7 @@ export class ScreenBuffer implements Screen {
       const row: (Cell | null)[] = new Array(width).fill(null)
       if (y < this.h) {
         for (let x = 0; x < Math.min(width, this.w); x++) {
-          row[x] = this.cells[y]![x]
+          row[x] = this.cells[y]![x]!
         }
       }
       newCells.push(row)
@@ -90,7 +90,7 @@ export class ScreenBuffer implements Screen {
     const oy = area.minY
     for (let y = 0; y < this.h; y++) {
       for (let x = 0; x < this.w; x++) {
-        const cell = this.cells[y]![x]
+        const cell = this.cells[y]![x]!
         if (cell !== null) {
           scr.setCell(ox + x, oy + y, cell)
         }
@@ -103,7 +103,7 @@ export class ScreenBuffer implements Screen {
     for (let y = 0; y < this.h; y++) {
       let line = ""
       for (let x = 0; x < this.w; x++) {
-        const cell = this.cells[y]![x]
+        const cell = this.cells[y]![x]!
         if (cell !== null) {
           if (cell.style) line += cell.style
           line += cell.char

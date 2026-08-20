@@ -23,7 +23,7 @@ function getLines(str: string): [string[], number] {
  */
 export function JoinHorizontal(pos: Position, ...strs: string[]): string {
   if (strs.length === 0) return ""
-  if (strs.length === 1) return strs[0]
+  if (strs.length === 1) return strs[0]!
 
   const blocks: string[][] = []
   const maxWidths: number[] = []
@@ -79,7 +79,7 @@ export function JoinHorizontal(pos: Position, ...strs: string[]): string {
  */
 export function JoinVertical(pos: Position, ...strs: string[]): string {
   if (strs.length === 0) return ""
-  if (strs.length === 1) return strs[0]
+  if (strs.length === 1) return strs[0]!
 
   const blocks: string[][] = []
   let maxWidth = 0

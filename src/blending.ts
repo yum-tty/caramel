@@ -59,7 +59,7 @@ function xyzToRgb(x: number, y: number, z: number): RGBColor {
   }
 }
 
-const D65 = [0.95047, 1.0, 1.08883]
+const D65 = [0.95047, 1.0, 1.08883] as const
 
 function xyzToLab(x: number, y: number, z: number): LabColor {
   const f = (t: number) => t > 0.008856 ? Math.cbrt(t) : 7.787 * t + 16 / 116
